@@ -11,14 +11,19 @@ const authMiddleware = async (req, res, next) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     
-    // Fetch fresh user data
+    // Fetch fresh user data (role added)
     const result = await pool.query(
-      'SELECT id, username, email, avatar_url, is_premium, total_earnings, total_views FROM users WHERE id = $1',
+      'SELECT id, username, email, role, avatar_url, is_premium, total_earnings, total_views, is_banned FROM users WHERE id = $1',
       [decoded.userId]
     );
 
     if (result.rows.length === 0) {
       return res.status(401).json({ message: 'User not found.' });
+    }
+
+    // Block banned users
+    if (result.rows[0].is_banned) {
+      return res.status(403).json({ message: 'Your account has been banned.' });
     }
 
     req.user = result.rows[0];

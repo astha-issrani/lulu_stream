@@ -6,6 +6,7 @@ require('dotenv').config();
 const authRoutes = require('./routes/auth');
 const videoRoutes = require('./routes/videos');
 const earningsRoutes = require('./routes/earnings');
+const adminRoutes = require('./routes/adminRoutes'); // 👈 added
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +26,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/earnings', earningsRoutes);
+app.use('/api/admin', adminRoutes); // 👈 added
 
 // Health check
 app.get('/api/health', (req, res) => {

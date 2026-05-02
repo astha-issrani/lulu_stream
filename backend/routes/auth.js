@@ -6,9 +6,9 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const authMiddleware = require('../middleware/auth');
 
-// Generate JWT
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+// Generate JWT (includes role)
+const generateToken = (userId, role) => {
+  return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 // @route   POST /api/auth/register
@@ -30,7 +30,6 @@ router.post(
     const { username, email, password } = req.body;
 
     try {
-      // Check existing user
       const existing = await pool.query(
         'SELECT id FROM users WHERE email = $1 OR username = $2',
         [email, username]
@@ -39,20 +38,18 @@ router.post(
         return res.status(409).json({ message: 'Email or username already in use.' });
       }
 
-      // Hash password
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
 
-      // Create user
       const result = await pool.query(
         `INSERT INTO users (username, email, password_hash) 
          VALUES ($1, $2, $3) 
-         RETURNING id, username, email, avatar_url, is_premium, total_earnings, total_views, created_at`,
+         RETURNING id, username, email, role, avatar_url, is_premium, total_earnings, total_views, created_at`,
         [username, email, passwordHash]
       );
 
       const user = result.rows[0];
-      const token = generateToken(user.id);
+      const token = generateToken(user.id, user.role);
 
       res.status(201).json({
         message: 'Account created successfully!',
@@ -61,6 +58,7 @@ router.post(
           id: user.id,
           username: user.username,
           email: user.email,
+          role: user.role,
           avatarUrl: user.avatar_url,
           isPremium: user.is_premium,
           totalEarnings: user.total_earnings,
@@ -102,13 +100,18 @@ router.post(
       }
 
       const user = result.rows[0];
-      const isMatch = await bcrypt.compare(password, user.password_hash);
 
+      // Check if banned
+      if (user.is_banned) {
+        return res.status(403).json({ message: `Account banned: ${user.ban_reason || 'Contact support.'}` });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password_hash);
       if (!isMatch) {
         return res.status(401).json({ message: 'Invalid email or password.' });
       }
 
-      const token = generateToken(user.id);
+      const token = generateToken(user.id, user.role);
 
       res.json({
         message: 'Login successful!',
@@ -117,6 +120,7 @@ router.post(
           id: user.id,
           username: user.username,
           email: user.email,
+          role: user.role,
           avatarUrl: user.avatar_url,
           isPremium: user.is_premium,
           totalEarnings: parseFloat(user.total_earnings),
@@ -134,7 +138,18 @@ router.post(
 // @desc    Get current user
 // @access  Private
 router.get('/me', authMiddleware, async (req, res) => {
-  res.json({ user: req.user });
+  res.json({
+    user: {
+      id: req.user.id,
+      username: req.user.username,
+      email: req.user.email,
+      role: req.user.role,
+      avatarUrl: req.user.avatar_url,
+      isPremium: req.user.is_premium,
+      totalEarnings: parseFloat(req.user.total_earnings),
+      totalViews: parseInt(req.user.total_views),
+    }
+  });
 });
 
 // @route   PUT /api/auth/profile
@@ -147,7 +162,7 @@ router.put('/profile', authMiddleware, async (req, res) => {
     const result = await pool.query(
       `UPDATE users SET username = COALESCE($1, username), bio = COALESCE($2, bio), avatar_url = COALESCE($3, avatar_url)
        WHERE id = $4
-       RETURNING id, username, email, avatar_url, bio, is_premium, total_earnings, total_views`,
+       RETURNING id, username, email, role, avatar_url, bio, is_premium, total_earnings, total_views`,
       [username, bio, avatarUrl, req.user.id]
     );
 
