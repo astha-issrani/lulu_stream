@@ -105,7 +105,10 @@ const Register = () => {
           </div>
 
           <div className="terms-note">
-            By registering you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            By registering you agree to our{' '}
+            <span className="auth-link" style={{ cursor: 'pointer' }}>Terms of Service</span>
+            {' '}and{' '}
+            <span className="auth-link" style={{ cursor: 'pointer' }}>Privacy Policy</span>.
           </div>
 
           <button type="submit" className="btn-primary auth-submit" disabled={loading}>
