@@ -11,6 +11,8 @@ const VideoPlayer = () => {
   const [video, setVideo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [videoError, setVideoError] = useState('');
+  const [showDebugUrl, setShowDebugUrl] = useState(false);
 
   useEffect(() => {
     const fetchVideo = async () => {
@@ -26,6 +28,29 @@ const VideoPlayer = () => {
     fetchVideo();
   }, [id]);
 
+  const getVideoSrc = (url) => {
+    if (!url) return '';
+    // If it's a Cloudinary URL, add streaming optimizations
+    if (url.includes('cloudinary.com')) {
+      return url.replace('/upload/', '/upload/q_auto,f_auto/');
+    }
+    return url;
+  };
+
+  const handleVideoError = (e) => {
+    const errCode = e.target.error?.code;
+    const errMap = {
+      1: 'Video loading aborted.',
+      2: 'Network error — check your connection.',
+      3: 'Video format not supported or file is corrupted.',
+      4: 'Video URL is invalid or access is denied (CORS).',
+    };
+    const msg = errMap[errCode] || 'Unknown video error.';
+    setVideoError(msg);
+    console.error('Video error code:', errCode, '| Message:', msg);
+    console.error('Video src:', e.target.src);
+  };
+
   if (loading) return (
     <div className="page-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
       <div className="spinner" />
@@ -39,6 +64,8 @@ const VideoPlayer = () => {
     </div>
   );
 
+  const videoSrc = getVideoSrc(video.video_url);
+
   return (
     <div className="page-wrapper video-player-page">
       <div className="container">
@@ -47,13 +74,63 @@ const VideoPlayer = () => {
           {/* Video Player */}
           <div className="player-main">
             <div className="video-wrapper">
+
+              {/* Video error message */}
+              {videoError && (
+                <div style={{
+                  background: 'rgba(255,80,80,0.1)',
+                  border: '1px solid rgba(255,80,80,0.3)',
+                  color: '#ff7070',
+                  padding: '12px 16px',
+                  borderRadius: 8,
+                  fontSize: 13,
+                  marginBottom: 10,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 8,
+                }}>
+                  <span>❌ {videoError}</span>
+                  <button
+                    style={{
+                      background: 'none', border: 'none', color: '#4f8ef7',
+                      cursor: 'pointer', fontSize: 12, textAlign: 'left', padding: 0
+                    }}
+                    onClick={() => setShowDebugUrl(v => !v)}
+                  >
+                    {showDebugUrl ? 'Hide' : 'Show'} video URL for debugging
+                  </button>
+                  {showDebugUrl && (
+                    <span style={{ fontSize: 11, wordBreak: 'break-all', color: '#aaa' }}>
+                      {videoSrc || '(empty — URL was not saved correctly)'}
+                    </span>
+                  )}
+                  {videoSrc && (
+                    <a
+                      href={videoSrc}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: '#4f8ef7', fontSize: 12 }}
+                    >
+                      Try opening video directly ↗
+                    </a>
+                  )}
+                </div>
+              )}
+
               <video
+                key={videoSrc}
                 controls
                 autoPlay
-                src={video.video_url}
+                playsInline
+                crossOrigin="anonymous"
+                src={videoSrc}
                 poster={video.thumbnail_url}
                 className="video-el"
+                onError={handleVideoError}
+                onCanPlay={() => setVideoError('')}
               >
+                <source src={videoSrc} type="video/mp4" />
+                <source src={videoSrc} type="video/webm" />
                 Your browser does not support the video tag.
               </video>
             </div>

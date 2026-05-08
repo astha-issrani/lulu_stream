@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Upload.css';
 
+const CLOUD_NAME = 'dnpy4ko1u';
+const UPLOAD_PRESET = 'videostream_upload';
+
 const Upload = () => {
   const navigate = useNavigate();
+  const videoInputRef = useRef(null);
+  const thumbInputRef = useRef(null);
+
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -12,6 +18,16 @@ const Upload = () => {
     thumbnailUrl: '',
     isPremium: false,
   });
+
+  const [videoFile, setVideoFile] = useState(null);
+  const [thumbFile, setThumbFile] = useState(null);
+  const [videoProgress, setVideoProgress] = useState(0);
+  const [thumbProgress, setThumbProgress] = useState(0);
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [uploadingThumb, setUploadingThumb] = useState(false);
+  const [videoUploaded, setVideoUploaded] = useState(false);
+  const [thumbUploaded, setThumbUploaded] = useState(false);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -21,12 +37,105 @@ const Upload = () => {
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
   };
 
+  // Upload a file to Cloudinary with progress tracking
+  const uploadToCloudinary = (file, resourceType, onProgress) => {
+    return new Promise((resolve, reject) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', UPLOAD_PRESET);
+      formData.append('resource_type', resourceType);
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${resourceType}/upload`);
+
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) {
+          const pct = Math.round((e.loaded / e.total) * 100);
+          onProgress(pct);
+        }
+      };
+
+      xhr.onload = () => {
+        if (xhr.status === 200) {
+          const data = JSON.parse(xhr.responseText);
+          resolve(data.secure_url);
+        } else {
+          reject(new Error('Cloudinary upload failed'));
+        }
+      };
+
+      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.send(formData);
+    });
+  };
+
+  const handleVideoFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const maxSize = 500 * 1024 * 1024; // 500MB
+    if (file.size > maxSize) {
+      setError('Video file must be under 500MB.');
+      return;
+    }
+
+    setError('');
+    setVideoFile(file);
+    setVideoUploaded(false);
+    setVideoProgress(0);
+    setUploadingVideo(true);
+
+    try {
+      const url = await uploadToCloudinary(file, 'video', setVideoProgress);
+      setForm(prev => ({ ...prev, videoUrl: url }));
+      setVideoUploaded(true);
+    } catch (err) {
+      setError('Video upload failed. Please try again.');
+      setVideoFile(null);
+    } finally {
+      setUploadingVideo(false);
+    }
+  };
+
+  const handleThumbFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      setError('Thumbnail must be under 5MB.');
+      return;
+    }
+
+    setError('');
+    setThumbFile(file);
+    setThumbUploaded(false);
+    setThumbProgress(0);
+    setUploadingThumb(true);
+
+    try {
+      const url = await uploadToCloudinary(file, 'image', setThumbProgress);
+      setForm(prev => ({ ...prev, thumbnailUrl: url }));
+      setThumbUploaded(true);
+    } catch (err) {
+      setError('Thumbnail upload failed. Please try again.');
+      setThumbFile(null);
+    } finally {
+      setUploadingThumb(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
-    setLoading(true);
 
+    if (!form.videoUrl) {
+      setError('Please upload a video file first.');
+      return;
+    }
+
+    setLoading(true);
     try {
       const { data } = await axios.post('/api/videos', {
         title: form.title,
@@ -36,13 +145,18 @@ const Upload = () => {
         isPremium: form.isPremium,
       });
 
-      setSuccess('Video uploaded successfully!');
+      setSuccess('Video uploaded successfully! Redirecting...');
       setTimeout(() => navigate(`/video/${data.video.id}`), 1500);
     } catch (err) {
       setError(err.response?.data?.message || 'Upload failed.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
@@ -56,6 +170,8 @@ const Upload = () => {
           {success && <div className="auth-success">{success}</div>}
 
           <form onSubmit={handleSubmit} className="upload-form">
+
+            {/* Title */}
             <div className="form-group">
               <label>Video Title *</label>
               <input
@@ -69,32 +185,123 @@ const Upload = () => {
               />
             </div>
 
+            {/* Video File Upload */}
             <div className="form-group">
-              <label>Video URL *</label>
+              <label>Video File *</label>
+              <div
+                className={`file-drop-zone ${videoUploaded ? 'uploaded' : ''} ${uploadingVideo ? 'uploading' : ''}`}
+                onClick={() => !uploadingVideo && videoInputRef.current.click()}
+              >
+                {!videoFile ? (
+                  <>
+                    <div className="drop-icon">🎬</div>
+                    <p className="drop-text">Click to select your video file</p>
+                    <p className="drop-hint">MP4, WebM, MOV — Max 500MB</p>
+                  </>
+                ) : (
+                  <div className="file-info">
+                    <div className="file-name-row">
+                      <span className="file-icon">🎬</span>
+                      <span className="file-name">{videoFile.name}</span>
+                      <span className="file-size">{formatFileSize(videoFile.size)}</span>
+                    </div>
+
+                    {uploadingVideo && (
+                      <div className="progress-wrap">
+                        <div className="progress-bar">
+                          <div className="progress-fill" style={{ width: `${videoProgress}%` }} />
+                        </div>
+                        <span className="progress-pct">{videoProgress}%</span>
+                      </div>
+                    )}
+
+                    {videoUploaded && (
+                      <div className="upload-done">
+                        ✅ Uploaded to Cloudinary successfully
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
               <input
-                type="url"
-                name="videoUrl"
-                className="input-field"
-                placeholder="https://your-video-hosting.com/video.mp4"
-                value={form.videoUrl}
-                onChange={handleChange}
-                required
+                ref={videoInputRef}
+                type="file"
+                accept="video/mp4,video/webm,video/mov,video/*"
+                style={{ display: 'none' }}
+                onChange={handleVideoFileChange}
               />
-              <small className="field-hint">Paste the direct URL to your video file (MP4, WebM, etc.)</small>
+              {!videoFile && (
+                <small className="field-hint">
+                  Or paste a direct URL below instead
+                </small>
+              )}
             </div>
 
+            {/* Manual Video URL fallback */}
+            {!videoUploaded && (
+              <div className="form-group">
+                <label>Video URL <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(or paste a direct link)</span></label>
+                <input
+                  type="url"
+                  name="videoUrl"
+                  className="input-field"
+                  placeholder="https://your-video-hosting.com/video.mp4"
+                  value={form.videoUrl}
+                  onChange={handleChange}
+                />
+                <small className="field-hint">Paste a direct MP4/WebM URL if you're not uploading a file</small>
+              </div>
+            )}
+
+            {/* Thumbnail Upload */}
             <div className="form-group">
-              <label>Thumbnail URL</label>
+              <label>Thumbnail <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(optional)</span></label>
+              <div
+                className={`file-drop-zone thumb-drop ${thumbUploaded ? 'uploaded' : ''} ${uploadingThumb ? 'uploading' : ''}`}
+                onClick={() => !uploadingThumb && thumbInputRef.current.click()}
+              >
+                {!thumbFile ? (
+                  <>
+                    <div className="drop-icon">🖼️</div>
+                    <p className="drop-text">Click to upload thumbnail</p>
+                    <p className="drop-hint">JPG, PNG — Max 5MB</p>
+                  </>
+                ) : (
+                  <div className="file-info">
+                    <div className="file-name-row">
+                      {thumbUploaded
+                        ? <img src={form.thumbnailUrl} alt="thumb preview" className="thumb-preview" />
+                        : <span className="file-icon">🖼️</span>
+                      }
+                      <span className="file-name">{thumbFile.name}</span>
+                      <span className="file-size">{formatFileSize(thumbFile.size)}</span>
+                    </div>
+
+                    {uploadingThumb && (
+                      <div className="progress-wrap">
+                        <div className="progress-bar">
+                          <div className="progress-fill" style={{ width: `${thumbProgress}%` }} />
+                        </div>
+                        <span className="progress-pct">{thumbProgress}%</span>
+                      </div>
+                    )}
+
+                    {thumbUploaded && (
+                      <div className="upload-done">✅ Thumbnail uploaded</div>
+                    )}
+                  </div>
+                )}
+              </div>
               <input
-                type="url"
-                name="thumbnailUrl"
-                className="input-field"
-                placeholder="https://example.com/thumbnail.jpg (optional)"
-                value={form.thumbnailUrl}
-                onChange={handleChange}
+                ref={thumbInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                style={{ display: 'none' }}
+                onChange={handleThumbFileChange}
               />
             </div>
 
+            {/* Description */}
             <div className="form-group">
               <label>Description</label>
               <textarea
@@ -107,6 +314,7 @@ const Upload = () => {
               />
             </div>
 
+            {/* Premium Toggle */}
             <div className="toggle-group">
               <div className="toggle-info">
                 <strong>Premium Content</strong>
@@ -123,18 +331,30 @@ const Upload = () => {
               </label>
             </div>
 
+            {/* Actions */}
             <div className="upload-actions">
               <button
                 type="button"
                 className="btn-secondary"
                 onClick={() => navigate('/dashboard')}
+                disabled={uploadingVideo || uploadingThumb}
               >
                 Cancel
               </button>
-              <button type="submit" className="btn-primary" disabled={loading}>
-                {loading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : '📤 Upload Video'}
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={loading || uploadingVideo || uploadingThumb || !form.videoUrl}
+              >
+                {loading
+                  ? <span className="spinner" style={{ width: 18, height: 18 }} />
+                  : uploadingVideo
+                  ? `Uploading... ${videoProgress}%`
+                  : '📤 Publish Video'
+                }
               </button>
             </div>
+
           </form>
         </div>
       </div>

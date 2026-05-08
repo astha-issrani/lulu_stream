@@ -130,3 +130,136 @@ input:checked + .toggle-slider:before {
   font-size: 14px;
   margin-bottom: 20px;
 }
+/* ── FILE DROP ZONE ── */
+.file-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: var(--radius-md, 12px);
+  padding: 28px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: var(--bg-secondary);
+}
+
+.file-drop-zone:hover {
+  border-color: var(--accent-blue, #4f8ef7);
+  background: rgba(79, 142, 247, 0.04);
+}
+
+.file-drop-zone.uploading {
+  border-color: var(--accent-blue, #4f8ef7);
+  cursor: default;
+  pointer-events: none;
+}
+
+.file-drop-zone.uploaded {
+  border-color: var(--accent-green, #00e5a0);
+  border-style: solid;
+  background: rgba(0, 229, 160, 0.04);
+  cursor: default;
+}
+
+.thumb-drop {
+  padding: 18px 20px;
+}
+
+.drop-icon {
+  font-size: 36px;
+  margin-bottom: 10px;
+}
+
+.drop-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 4px;
+}
+
+.drop-hint {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ── FILE INFO (after selection) ── */
+.file-info {
+  text-align: left;
+  width: 100%;
+}
+
+.file-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.file-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.file-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-size {
+  font-size: 12px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+/* ── PROGRESS BAR ── */
+.progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-blue, #4f8ef7), #7eb8ff);
+  border-radius: 99px;
+  transition: width 0.2s ease;
+}
+
+.progress-pct {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent-blue, #4f8ef7);
+  min-width: 36px;
+  text-align: right;
+}
+
+/* ── UPLOAD DONE ── */
+.upload-done {
+  font-size: 13px;
+  color: var(--accent-green, #00e5a0);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* ── THUMBNAIL PREVIEW ── */
+.thumb-preview {
+  width: 48px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
