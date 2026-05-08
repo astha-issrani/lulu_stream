@@ -92,6 +92,12 @@ const Navbar = () => {
                   <Link to="/earnings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                     💰 Earnings
                   </Link>
+                  <Link to="/api-docs" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+  📄 API Docs
+</Link>
+<Link to="/premium" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+  ⭐ Premium Plans
+</Link>
                   <Link to="/settings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                     ⚙️ Settings
                   </Link>
