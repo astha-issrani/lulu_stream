@@ -51,9 +51,6 @@ const Navbar = () => {
         <div className="navbar-right">
           {user ? (
             <div className="user-menu">
-              <button className="btn-primary" onClick={() => navigate('/upload')}>
-                + Upload
-              </button>
               <div className="avatar-wrapper" onClick={() => setDropdownOpen(!dropdownOpen)}>
                 <div className="avatar">
                   {user.avatarUrl ? (
@@ -76,7 +73,6 @@ const Navbar = () => {
                   </div>
                   <div className="dropdown-divider" />
 
-                  {/* 👇 Show Admin Panel link only for admin/moderator */}
                   {(user.role === 'admin' || user.role === 'moderator') && (
                     <Link to="/admin" className="dropdown-item" onClick={() => setDropdownOpen(false)}
                       style={{ color: '#ff6b35' }}>
@@ -89,6 +85,9 @@ const Navbar = () => {
                   </Link>
                   <Link to="/my-videos" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                     🎬 My Videos
+                  </Link>
+                  <Link to="/upload" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
+                    📤 Upload Video
                   </Link>
                   <Link to="/earnings" className="dropdown-item" onClick={() => setDropdownOpen(false)}>
                     💰 Earnings
