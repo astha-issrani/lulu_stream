@@ -33,14 +33,14 @@ const Navbar = () => {
 
         {/* Desktop nav links */}
         <div className="navbar-links">
-          <Link to="/earn" className={`nav-link ${location.pathname === '/earn' ? 'active' : ''}`}>
-            Earn Money
+          <Link to="/dashboard" className={`nav-link ${location.pathname === '/dashboard' ? 'active' : ''}`}>
+            Dashboard
           </Link>
-          <Link to="/premium" className={`nav-link ${location.pathname === '/premium' ? 'active' : ''}`}>
-            Premium
+          <Link to="/my-videos" className={`nav-link ${location.pathname === '/my-videos' ? 'active' : ''}`}>
+            My Videos
           </Link>
-          <Link to="/api-docs" className={`nav-link ${location.pathname === '/api-docs' ? 'active' : ''}`}>
-            Api Docs
+          <Link to="/settings" className={`nav-link ${location.pathname === '/settings' ? 'active' : ''}`}>
+            Settings
           </Link>
           <Link to="/contact" className={`nav-link ${location.pathname === '/contact' ? 'active' : ''}`}>
             Contact
