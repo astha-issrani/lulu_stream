@@ -15,7 +15,7 @@ const Settings = () => {
 
   // Theme & Language state — loaded from localStorage
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'Dark');
-  const [language, setLanguage] = useState(() => localStorage.getItem('language') || 'English');
+
 
   // Apply theme to body whenever it changes
   useEffect(() => {
@@ -113,7 +113,6 @@ const Settings = () => {
 
   const handleAppearanceSave = () => {
     localStorage.setItem('theme', theme);
-    localStorage.setItem('language', language);
     document.body.setAttribute('data-theme', theme.toLowerCase());
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
@@ -510,19 +509,7 @@ const Settings = () => {
                     {theme === 'System' && '💻 Follows your OS preference'}
                   </p>
 
-                  <label className="appear-label" style={{ marginTop: 28 }}>Language</label>
-                  <select
-                    className="input-field"
-                    style={{ maxWidth: 280 }}
-                    value={language}
-                    onChange={e => setLanguage(e.target.value)}
-                  >
-                    <option value="English">🇬🇧 English</option>
-                    <option value="Hindi">🇮🇳 Hindi</option>
-                    <option value="Spanish">🇪🇸 Spanish</option>
-                    <option value="French">🇫🇷 French</option>
-                    <option value="German">🇩🇪 German</option>
-                  </select>
+    
 
                   <label className="appear-label" style={{ marginTop: 28 }}>Video Quality (default)</label>
                   <select className="input-field" style={{ maxWidth: 280 }}>
