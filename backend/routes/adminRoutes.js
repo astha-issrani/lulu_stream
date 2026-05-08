@@ -13,7 +13,7 @@ router.use(authMiddleware);
 // GET /api/admin/stats
 router.get('/stats', modMiddleware, async (req, res) => {
   try {
-    const [users, videos, earnings, reports, withdrawals, newUsers, newVideos] = await Promise.all([
+    const [users, videos, earnings, reports, withdrawals, newUsers, newVideos, unreadMessages] = await Promise.all([
       pool.query('SELECT COUNT(*) FROM users WHERE role = $1', ['user']),
       pool.query('SELECT COUNT(*) FROM videos WHERE status = $1', ['active']),
       pool.query('SELECT COALESCE(SUM(total_earnings),0) as total FROM users'),
@@ -21,6 +21,7 @@ router.get('/stats', modMiddleware, async (req, res) => {
       pool.query('SELECT COUNT(*) FROM withdrawals WHERE status = $1', ['pending']),
       pool.query("SELECT COUNT(*) FROM users WHERE created_at >= NOW() - INTERVAL '7 days'"),
       pool.query("SELECT COUNT(*) FROM videos WHERE created_at >= NOW() - INTERVAL '7 days'"),
+      pool.query("SELECT COUNT(*) FROM contact_messages WHERE status = 'unread'"),
     ]);
 
     res.json({
@@ -31,6 +32,7 @@ router.get('/stats', modMiddleware, async (req, res) => {
       pendingWithdrawals: parseInt(withdrawals.rows[0].count),
       newUsersThisWeek: parseInt(newUsers.rows[0].count),
       newVideosThisWeek: parseInt(newVideos.rows[0].count),
+      unreadMessages: parseInt(unreadMessages.rows[0].count),
     });
   } catch (e) {
     console.error(e);
@@ -82,7 +84,7 @@ router.get('/users', modMiddleware, async (req, res) => {
   }
 });
 
-// PUT /api/admin/users/:id/role  — change role
+// PUT /api/admin/users/:id/role
 router.put('/users/:id/role', adminMiddleware, async (req, res) => {
   const { role } = req.body;
   if (!['user', 'moderator', 'admin'].includes(role)) {
@@ -97,7 +99,7 @@ router.put('/users/:id/role', adminMiddleware, async (req, res) => {
   }
 });
 
-// PUT /api/admin/users/:id/ban  — ban/unban user
+// PUT /api/admin/users/:id/ban
 router.put('/users/:id/ban', modMiddleware, async (req, res) => {
   const { ban, reason } = req.body;
   try {
@@ -112,7 +114,7 @@ router.put('/users/:id/ban', modMiddleware, async (req, res) => {
   }
 });
 
-// PUT /api/admin/users/:id/premium  — toggle premium
+// PUT /api/admin/users/:id/premium
 router.put('/users/:id/premium', adminMiddleware, async (req, res) => {
   const { isPremium } = req.body;
   try {
@@ -265,6 +267,52 @@ router.put('/withdrawals/:id', adminMiddleware, async (req, res) => {
     );
     await logAction(req.user.id, 'PROCESS_WITHDRAWAL', 'withdrawal', req.params.id, `Status → ${status}`);
     res.json({ message: `Withdrawal ${status}.` });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// ══════════════════════════════
+// CONTACT MESSAGES
+// ══════════════════════════════
+
+// GET /api/admin/messages
+router.get('/messages', modMiddleware, async (req, res) => {
+  const status = req.query.status || 'unread';
+  try {
+    const result = await pool.query(
+      `SELECT * FROM contact_messages WHERE status = $1 ORDER BY created_at DESC`,
+      [status]
+    );
+    res.json({ messages: result.rows });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// PUT /api/admin/messages/:id  — update status
+router.put('/messages/:id', modMiddleware, async (req, res) => {
+  const { status } = req.body;
+  if (!['unread', 'read', 'resolved'].includes(status)) {
+    return res.status(400).json({ message: 'Invalid status.' });
+  }
+  try {
+    await pool.query(
+      'UPDATE contact_messages SET status = $1 WHERE id = $2',
+      [status, req.params.id]
+    );
+    res.json({ message: 'Message updated.' });
+  } catch (e) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// DELETE /api/admin/messages/:id
+router.delete('/messages/:id', adminMiddleware, async (req, res) => {
+  try {
+    await pool.query('DELETE FROM contact_messages WHERE id = $1', [req.params.id]);
+    res.json({ message: 'Message deleted.' });
   } catch (e) {
     res.status(500).json({ message: 'Server error.' });
   }

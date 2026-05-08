@@ -1,21 +1,28 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import axios from 'axios';
 import './Contact.css';
 
 const Contact = () => {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+    try {
+      await axios.post('/api/contact', form);
       setSubmitted(true);
-    }, 1200);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -55,6 +62,15 @@ const Contact = () => {
           </div>
         ) : (
           <form className="contact-form" onSubmit={handleSubmit}>
+            {error && (
+              <div style={{
+                background: '#ff505022', border: '1px solid #ff5050',
+                color: '#ff5050', padding: '12px 16px', borderRadius: 8, marginBottom: 16
+              }}>
+                ❌ {error}
+              </div>
+            )}
+
             <div className="cf-row">
               <div className="form-group">
                 <label>Your Name</label>

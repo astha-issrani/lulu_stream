@@ -80,6 +80,7 @@
   opacity: 0;
   width: 0;
   height: 0;
+  position: absolute;
 }
 
 .toggle-slider {
@@ -97,8 +98,7 @@
   width: 18px;
   height: 18px;
   left: 3px;
-  top: 50%;
-  transform: translateY(-50%);
+  top: 3px; /* fixed: use top instead of transform for vertical centering */
   background: var(--text-muted);
   border-radius: 50%;
   transition: 0.3s;
@@ -110,7 +110,7 @@ input:checked + .toggle-slider {
 }
 
 input:checked + .toggle-slider:before {
-  transform: translateX(20px) translateY(-50%);
+  transform: translateX(20px); /* fixed: removed translateY(-50%) conflict */
   background: white;
 }
 
