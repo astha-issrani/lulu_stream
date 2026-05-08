@@ -7,6 +7,7 @@ const authRoutes = require('./routes/auth');
 const videoRoutes = require('./routes/videos');
 const earningsRoutes = require('./routes/earnings');
 const adminRoutes = require('./routes/adminRoutes'); // 👈 added
+const contactRoute = require('./routes/contact');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +31,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/videos', videoRoutes);
 app.use('/api/earnings', earningsRoutes);
 app.use('/api/admin', adminRoutes); // 👈 added
+app.use('/api/contact', contactRoute);
+
 
 // Health check
 app.get('/api/health', (req, res) => {
