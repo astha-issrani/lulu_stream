@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './Settings.css';
 
 const Settings = () => {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [saved, setSaved] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [saveError, setSaveError] = useState('');
+  const fileInputRef = useRef(null);
 
   const [profile, setProfile] = useState({
     username: user?.username || '',
     email: user?.email || '',
-    bio: '',
-    website: '',
-    location: '',
+    bio: user?.bio || '',
+    website: user?.website || '',
+    location: user?.location || '',
   });
 
   const [notifications, setNotifications] = useState({
@@ -36,10 +42,69 @@ const Settings = () => {
     confirmPassword: '',
   });
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      setSaveError('Image must be under 2MB.');
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
   };
+
+  const handleSave = async () => {
+    setSaveError('');
+    try {
+      let avatarUrl = user?.avatarUrl;
+
+      // If a new avatar was selected, convert to base64 and send as URL
+      // (for full file upload you'd use FormData + a separate upload endpoint)
+      if (avatarFile) {
+        const reader = new FileReader();
+        avatarUrl = await new Promise((resolve) => {
+          reader.onload = () => resolve(reader.result);
+          reader.readAsDataURL(avatarFile);
+        });
+      }
+
+      const { data } = await axios.put('/api/auth/profile', {
+        username: profile.username,
+        bio: profile.bio,
+        avatarUrl,
+      });
+
+      updateUser({
+        ...user,
+        username: data.user.username,
+        bio: data.user.bio,
+        avatarUrl: data.user.avatar_url,
+      });
+
+      setSaved(true);
+      setEditMode(false);
+      setAvatarFile(null);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      setSaveError(err.response?.data?.message || 'Failed to save changes.');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditMode(false);
+    setAvatarPreview(null);
+    setAvatarFile(null);
+    setSaveError('');
+    setProfile({
+      username: user?.username || '',
+      email: user?.email || '',
+      bio: user?.bio || '',
+      website: user?.website || '',
+      location: user?.location || '',
+    });
+  };
+
+  const currentAvatar = avatarPreview || user?.avatarUrl;
 
   const tabs = [
     { id: 'profile', icon: '👤', label: 'Profile' },
@@ -53,17 +118,46 @@ const Settings = () => {
   return (
     <div className="settings-page page-wrapper">
       <div className="container">
-        <div className="settings-header">
-          <h1>Settings</h1>
-          <p className="settings-subtitle">Manage your account preferences</p>
+        <div className="settings-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <h1>Settings</h1>
+            <p className="settings-subtitle">Manage your account preferences</p>
+          </div>
+          {activeTab === 'profile' && (
+            editMode ? (
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button className="btn-secondary" onClick={handleCancelEdit}>Cancel</button>
+                <button className={`btn-primary save-btn ${saved ? 'saved' : ''}`} onClick={handleSave}>
+                  {saved ? '✓ Saved!' : '💾 Save Changes'}
+                </button>
+              </div>
+            ) : (
+              <button className="btn-secondary" onClick={() => setEditMode(true)}>
+                ✏️ Edit Profile
+              </button>
+            )
+          )}
         </div>
+
+        {saveError && (
+          <div style={{
+            background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)',
+            color: '#ff7070', padding: '11px 16px', borderRadius: 8,
+            fontSize: 14, marginBottom: 16
+          }}>
+            ❌ {saveError}
+          </div>
+        )}
 
         <div className="settings-layout">
           {/* Sidebar */}
           <aside className="settings-sidebar">
             <div className="settings-avatar-block">
               <div className="settings-avatar">
-                {user?.username?.[0]?.toUpperCase() || 'U'}
+                {currentAvatar
+                  ? <img src={currentAvatar} alt="avatar" style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                  : user?.username?.[0]?.toUpperCase() || 'U'
+                }
               </div>
               <div>
                 <strong>{user?.username}</strong>
@@ -91,45 +185,112 @@ const Settings = () => {
             {activeTab === 'profile' && (
               <div className="settings-section">
                 <h2>Profile Information</h2>
-                <p className="section-desc">Update your public profile details</p>
+                <p className="section-desc">
+                  {editMode ? 'Edit your public profile details below' : 'View your public profile details'}
+                </p>
 
+                {/* Avatar */}
                 <div className="avatar-upload-row">
-                  <div className="big-avatar">
-                    {user?.username?.[0]?.toUpperCase() || 'U'}
+                  <div className="big-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
+                    {currentAvatar
+                      ? <img src={currentAvatar} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+                      : user?.username?.[0]?.toUpperCase() || 'U'
+                    }
                   </div>
                   <div>
-                    <button className="btn-secondary">Change Photo</button>
-                    <p className="hint-text">JPG, PNG or GIF. Max 2MB.</p>
+                    {editMode ? (
+                      <>
+                        <button className="btn-secondary" onClick={() => fileInputRef.current.click()}>
+                          📷 Change Photo
+                        </button>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/jpeg,image/png,image/gif"
+                          style={{ display: 'none' }}
+                          onChange={handleAvatarChange}
+                        />
+                        <p className="hint-text">JPG, PNG or GIF. Max 2MB.</p>
+                        {avatarPreview && (
+                          <p className="hint-text" style={{ color: 'var(--accent-green)' }}>
+                            ✓ New photo selected
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <p className="hint-text" style={{ marginTop: 0 }}>
+                        Click <strong>Edit Profile</strong> to change your photo
+                      </p>
+                    )}
                   </div>
                 </div>
 
                 <div className="form-grid">
                   <div className="form-group">
                     <label>Username</label>
-                    <input className="input-field" value={profile.username}
-                      onChange={e => setProfile({ ...profile, username: e.target.value })} />
+                    <input
+                      className="input-field"
+                      value={profile.username}
+                      disabled={!editMode}
+                      style={{ opacity: editMode ? 1 : 0.6, cursor: editMode ? 'text' : 'default' }}
+                      onChange={e => setProfile({ ...profile, username: e.target.value })}
+                    />
                   </div>
                   <div className="form-group">
                     <label>Email</label>
-                    <input className="input-field" type="email" value={profile.email}
-                      onChange={e => setProfile({ ...profile, email: e.target.value })} />
+                    <input
+                      className="input-field"
+                      type="email"
+                      value={profile.email}
+                      disabled
+                      style={{ opacity: 0.6, cursor: 'default' }}
+                    />
                   </div>
                   <div className="form-group full-width">
                     <label>Bio</label>
-                    <textarea className="input-field textarea" rows={3} placeholder="Tell viewers about yourself..."
-                      value={profile.bio} onChange={e => setProfile({ ...profile, bio: e.target.value })} />
+                    <textarea
+                      className="input-field textarea"
+                      rows={3}
+                      placeholder="Tell viewers about yourself..."
+                      value={profile.bio}
+                      disabled={!editMode}
+                      style={{ opacity: editMode ? 1 : 0.6, cursor: editMode ? 'text' : 'default' }}
+                      onChange={e => setProfile({ ...profile, bio: e.target.value })}
+                    />
                   </div>
                   <div className="form-group">
                     <label>Website</label>
-                    <input className="input-field" placeholder="https://yoursite.com"
-                      value={profile.website} onChange={e => setProfile({ ...profile, website: e.target.value })} />
+                    <input
+                      className="input-field"
+                      placeholder="https://yoursite.com"
+                      value={profile.website}
+                      disabled={!editMode}
+                      style={{ opacity: editMode ? 1 : 0.6, cursor: editMode ? 'text' : 'default' }}
+                      onChange={e => setProfile({ ...profile, website: e.target.value })}
+                    />
                   </div>
                   <div className="form-group">
                     <label>Location</label>
-                    <input className="input-field" placeholder="City, Country"
-                      value={profile.location} onChange={e => setProfile({ ...profile, location: e.target.value })} />
+                    <input
+                      className="input-field"
+                      placeholder="City, Country"
+                      value={profile.location}
+                      disabled={!editMode}
+                      style={{ opacity: editMode ? 1 : 0.6, cursor: editMode ? 'text' : 'default' }}
+                      onChange={e => setProfile({ ...profile, location: e.target.value })}
+                    />
                   </div>
                 </div>
+
+                {!editMode && (
+                  <div style={{
+                    marginTop: 20, padding: '12px 16px',
+                    background: 'rgba(79,142,247,0.06)', border: '1px solid rgba(79,142,247,0.15)',
+                    borderRadius: 8, fontSize: 13, color: 'var(--text-muted)'
+                  }}>
+                    💡 Click <strong style={{ color: 'var(--accent-blue)' }}>Edit Profile</strong> in the top right to make changes.
+                  </div>
+                )}
               </div>
             )}
 
@@ -138,7 +299,6 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Notification Preferences</h2>
                 <p className="section-desc">Choose what updates you want to receive</p>
-
                 <div className="toggle-group">
                   <p className="toggle-category">Email Notifications</p>
                   {[
@@ -158,7 +318,6 @@ const Settings = () => {
                       </label>
                     </div>
                   ))}
-
                   <p className="toggle-category" style={{ marginTop: 24 }}>Push Notifications</p>
                   {[
                     { key: 'pushViews', label: 'Live view count', desc: 'Real-time view notifications' },
@@ -233,7 +392,6 @@ const Settings = () => {
                       onChange={e => setSecurity({ ...security, confirmPassword: e.target.value })} />
                   </div>
                 </div>
-
                 <div className="security-info-block">
                   <div className="security-info-item">
                     <span className="si-icon">✅</span>
@@ -266,7 +424,6 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Monetization</h2>
                 <p className="section-desc">Manage how you earn from your content</p>
-
                 <div className="earn-rate-card">
                   <div className="earn-rate-left">
                     <span className="earn-icon">💸</span>
@@ -277,7 +434,6 @@ const Settings = () => {
                   </div>
                   <span className="badge badge-green">Active</span>
                 </div>
-
                 <div className="form-grid" style={{ marginTop: 24 }}>
                   <div className="form-group full-width">
                     <label>Payout Method</label>
@@ -301,7 +457,6 @@ const Settings = () => {
                     </select>
                   </div>
                 </div>
-
                 <div className="premium-upgrade-card">
                   <span>⭐</span>
                   <div>
@@ -318,7 +473,6 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Appearance</h2>
                 <p className="section-desc">Customize your viewing experience</p>
-
                 <div className="appearance-block">
                   <label className="appear-label">Theme</label>
                   <div className="theme-options">
@@ -329,7 +483,6 @@ const Settings = () => {
                       </button>
                     ))}
                   </div>
-
                   <label className="appear-label" style={{ marginTop: 28 }}>Language</label>
                   <select className="input-field" style={{ maxWidth: 280 }}>
                     <option>English</option>
@@ -338,7 +491,6 @@ const Settings = () => {
                     <option>French</option>
                     <option>German</option>
                   </select>
-
                   <label className="appear-label" style={{ marginTop: 28 }}>Video Quality (default)</label>
                   <select className="input-field" style={{ maxWidth: 280 }}>
                     <option>Auto</option>
@@ -351,12 +503,14 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Save button */}
-            <div className="settings-footer">
-              <button className={`btn-primary save-btn ${saved ? 'saved' : ''}`} onClick={handleSave}>
-                {saved ? '✓ Saved!' : 'Save Changes'}
-              </button>
-            </div>
+            {/* Save button for non-profile tabs */}
+            {activeTab !== 'profile' && (
+              <div className="settings-footer">
+                <button className={`btn-primary save-btn ${saved ? 'saved' : ''}`} onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}>
+                  {saved ? '✓ Saved!' : 'Save Changes'}
+                </button>
+              </div>
+            )}
           </main>
         </div>
       </div>
