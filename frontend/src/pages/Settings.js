@@ -13,6 +13,11 @@ const Settings = () => {
   const [saveError, setSaveError] = useState('');
   const fileInputRef = useRef(null);
 
+  // Password states
+  const [pwError, setPwError] = useState('');
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwLoading, setPwLoading] = useState(false);
+
   const [profile, setProfile] = useState({
     username: user?.username || '',
     email: user?.email || '',
@@ -58,8 +63,6 @@ const Settings = () => {
     try {
       let avatarUrl = user?.avatarUrl;
 
-      // If a new avatar was selected, convert to base64 and send as URL
-      // (for full file upload you'd use FormData + a separate upload endpoint)
       if (avatarFile) {
         const reader = new FileReader();
         avatarUrl = await new Promise((resolve) => {
@@ -79,6 +82,7 @@ const Settings = () => {
         username: data.user.username,
         bio: data.user.bio,
         avatarUrl: data.user.avatar_url,
+        emailVerified: data.user.email_verified,
       });
 
       setSaved(true);
@@ -102,6 +106,38 @@ const Settings = () => {
       website: user?.website || '',
       location: user?.location || '',
     });
+  };
+
+  const handleChangePassword = async () => {
+    setPwError('');
+    setPwSuccess('');
+
+    if (!security.currentPassword || !security.newPassword || !security.confirmPassword) {
+      setPwError('Please fill in all fields.');
+      return;
+    }
+    if (security.newPassword !== security.confirmPassword) {
+      setPwError('New passwords do not match.');
+      return;
+    }
+    if (security.newPassword.length < 6) {
+      setPwError('New password must be at least 6 characters.');
+      return;
+    }
+
+    setPwLoading(true);
+    try {
+      await axios.put('/api/auth/change-password', {
+        currentPassword: security.currentPassword,
+        newPassword: security.newPassword,
+      });
+      setPwSuccess('Password changed successfully!');
+      setSecurity({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) {
+      setPwError(err.response?.data?.message || 'Failed to change password.');
+    } finally {
+      setPwLoading(false);
+    }
   };
 
   const currentAvatar = avatarPreview || user?.avatarUrl;
@@ -189,7 +225,6 @@ const Settings = () => {
                   {editMode ? 'Edit your public profile details below' : 'View your public profile details'}
                 </p>
 
-                {/* Avatar */}
                 <div className="avatar-upload-row">
                   <div className="big-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
                     {currentAvatar
@@ -372,6 +407,22 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Security</h2>
                 <p className="section-desc">Keep your account safe</p>
+
+                {pwError && (
+                  <div style={{
+                    background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)',
+                    color: '#ff7070', padding: '11px 16px', borderRadius: 8,
+                    fontSize: 14, marginBottom: 16
+                  }}>❌ {pwError}</div>
+                )}
+                {pwSuccess && (
+                  <div style={{
+                    background: 'rgba(50,200,100,0.1)', border: '1px solid rgba(50,200,100,0.3)',
+                    color: '#50c878', padding: '11px 16px', borderRadius: 8,
+                    fontSize: 14, marginBottom: 16
+                  }}>✅ {pwSuccess}</div>
+                )}
+
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label>Current Password</label>
@@ -392,12 +443,27 @@ const Settings = () => {
                       onChange={e => setSecurity({ ...security, confirmPassword: e.target.value })} />
                   </div>
                 </div>
-                <div className="security-info-block">
+
+                <button
+                  className="btn-primary"
+                  onClick={handleChangePassword}
+                  disabled={pwLoading}
+                  style={{ marginTop: 8 }}
+                >
+                  {pwLoading ? 'Updating...' : '🔑 Update Password'}
+                </button>
+
+                <div className="security-info-block" style={{ marginTop: 28 }}>
                   <div className="security-info-item">
-                    <span className="si-icon">✅</span>
+                    <span className="si-icon">{user?.emailVerified ? '✅' : '⚠️'}</span>
                     <div>
-                      <strong>Email verified</strong>
-                      <span>{user?.email}</span>
+                      <strong>{user?.emailVerified ? 'Email verified' : 'Email not verified'}</strong>
+                      <span>
+                        {user?.email}
+                        {!user?.emailVerified && (
+                          <> — <button className="link-btn">Resend verification</button></>
+                        )}
+                      </span>
                     </div>
                   </div>
                   <div className="security-info-item">
@@ -504,7 +570,7 @@ const Settings = () => {
             )}
 
             {/* Save button for non-profile tabs */}
-            {activeTab !== 'profile' && (
+            {activeTab !== 'profile' && activeTab !== 'security' && (
               <div className="settings-footer">
                 <button className={`btn-primary save-btn ${saved ? 'saved' : ''}`} onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}>
                   {saved ? '✓ Saved!' : 'Save Changes'}

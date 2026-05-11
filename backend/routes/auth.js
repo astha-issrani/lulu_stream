@@ -255,5 +255,35 @@ router.put('/change-password', authMiddleware, async (req, res) => {
     res.status(500).json({ message: 'Server error.' });
   }
 });
+const bcrypt = require('bcryptjs');
+// (already imported presumably)
+
+// PUT /api/auth/change-password
+router.put('/change-password', authMiddleware, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword)
+    return res.status(400).json({ message: 'All fields are required.' });
+
+  if (newPassword.length < 6)
+    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+
+  try {
+    const result = await db.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch)
+      return res.status(400).json({ message: 'Current password is incorrect.' });
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashed, req.user.id]);
+
+    res.json({ message: 'Password updated successfully.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
 
 module.exports = router;
