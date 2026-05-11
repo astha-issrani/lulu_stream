@@ -7,6 +7,7 @@ import Contact from './pages/Contact';
 import VideoPlayer from './pages/VideoPlayer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminPanel from './pages/Adminpanel';
+import Earnings from './pages/Earnings';
 
 // Pages
 import Home from './pages/Home';
@@ -290,7 +291,9 @@ function App() {
           <Route path="/my-videos" element={
             <ProtectedRoute><MyVideos /></ProtectedRoute>
           } />
-          <Route path="/earnings" element={<Navigate to="/dashboard" />} />
+          <Route path="/earnings" element={
+  <ProtectedRoute><Earnings /></ProtectedRoute>
+} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
