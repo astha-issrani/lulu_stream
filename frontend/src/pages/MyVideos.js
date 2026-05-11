@@ -89,7 +89,7 @@ const MyVideos = () => {
             <div style={{ fontSize: 56, marginBottom: 16 }}>🎬</div>
             <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>No videos yet</h3>
             <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>Upload your first video and start earning!</p>
-            <button className="btn-primary" onClick={() => navigate('/upload')}>+ Upload Now</button>
+            
           </div>
         ) : (
           Object.entries(grouped).map(([date, dayVideos]) => (

@@ -16,7 +16,6 @@ const Settings = () => {
   // Theme & Language state — loaded from localStorage
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'Dark');
 
-
   // Apply theme to body whenever it changes
   useEffect(() => {
     document.body.setAttribute('data-theme', theme.toLowerCase());
@@ -50,6 +49,10 @@ const Settings = () => {
     newPassword: '',
     confirmPassword: '',
   });
+
+  // ── NEW: password-specific error/success ──
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaved, setPasswordSaved] = useState(false);
 
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
@@ -109,6 +112,36 @@ const Settings = () => {
       website: user?.website || '',
       location: user?.location || '',
     });
+  };
+
+  // ── NEW: actual password change API call ──
+  const handlePasswordSave = async () => {
+    setPasswordError('');
+    setPasswordSaved(false);
+
+    const { currentPassword, newPassword, confirmPassword } = security;
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('New password must be at least 6 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match.');
+      return;
+    }
+
+    try {
+      await axios.put('/api/auth/change-password', { currentPassword, newPassword });
+      setPasswordSaved(true);
+      setSecurity({ currentPassword: '', newPassword: '', confirmPassword: '' });
+      setTimeout(() => setPasswordSaved(false), 3000);
+    } catch (err) {
+      setPasswordError(err.response?.data?.message || 'Failed to change password.');
+    }
   };
 
   const handleAppearanceSave = () => {
@@ -385,6 +418,7 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Security</h2>
                 <p className="section-desc">Keep your account safe</p>
+
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label>Current Password</label>
@@ -405,14 +439,55 @@ const Settings = () => {
                       onChange={e => setSecurity({ ...security, confirmPassword: e.target.value })} />
                   </div>
                 </div>
+
+                {/* ── Password feedback ── */}
+                {passwordError && (
+                  <div style={{
+                    background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)',
+                    color: '#ff7070', padding: '11px 16px', borderRadius: 8,
+                    fontSize: 14, marginBottom: 16
+                  }}>
+                    ❌ {passwordError}
+                  </div>
+                )}
+                {passwordSaved && (
+                  <div style={{
+                    background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
+                    color: '#00e5a0', padding: '11px 16px', borderRadius: 8,
+                    fontSize: 14, marginBottom: 16
+                  }}>
+                    ✅ Password changed successfully!
+                  </div>
+                )}
+
+                {/* ── Change password button ── */}
+                <button
+                  className="btn-primary"
+                  style={{ marginBottom: 28 }}
+                  onClick={handlePasswordSave}
+                >
+                  🔐 Change Password
+                </button>
+
                 <div className="security-info-block">
+                  {/* ── FIX: check user?.is_email_verified instead of hardcoding ✅ ── */}
                   <div className="security-info-item">
-                    <span className="si-icon">✅</span>
+                    <span className="si-icon">
+                      {user?.is_email_verified ? '✅' : '⚠️'}
+                    </span>
                     <div>
-                      <strong>Email verified</strong>
-                      <span>{user?.email}</span>
+                      <strong>
+                        {user?.is_email_verified ? 'Email verified' : 'Email not verified'}
+                      </strong>
+                      <span>
+                        {user?.is_email_verified
+                          ? user?.email
+                          : 'Please check your inbox for a verification link.'
+                        }
+                      </span>
                     </div>
                   </div>
+
                   <div className="security-info-item">
                     <span className="si-icon">📱</span>
                     <div>
@@ -487,7 +562,6 @@ const Settings = () => {
                 <h2>Appearance</h2>
                 <p className="section-desc">Customize your viewing experience</p>
                 <div className="appearance-block">
-
                   <label className="appear-label">Theme</label>
                   <div className="theme-options">
                     {['Dark', 'Light', 'System'].map(t => (
@@ -502,14 +576,11 @@ const Settings = () => {
                     ))}
                   </div>
 
-                  {/* Live preview badge */}
                   <p className="theme-preview-hint">
                     {theme === 'Dark' && '🌙 Dark mode active — easy on the eyes'}
                     {theme === 'Light' && '☀️ Light mode active — bright and clean'}
                     {theme === 'System' && '💻 Follows your OS preference'}
                   </p>
-
-    
 
                   <label className="appear-label" style={{ marginTop: 28 }}>Video Quality (default)</label>
                   <select className="input-field" style={{ maxWidth: 280 }}>
@@ -523,8 +594,8 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Save button for non-profile tabs */}
-            {activeTab !== 'profile' && (
+            {/* Save button for non-profile, non-security tabs */}
+            {activeTab !== 'profile' && activeTab !== 'security' && (
               <div className="settings-footer">
                 <button
                   className={`btn-primary save-btn ${saved ? 'saved' : ''}`}
