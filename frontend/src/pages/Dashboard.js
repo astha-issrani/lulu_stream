@@ -52,7 +52,6 @@ const Dashboard = () => {
                 <p className="dash-subtitle">Here's how your content is performing</p>
               </div>
               <div style={{ display: 'flex', gap: 12 }}>
-                {/* 👇 Admin Panel button — only visible to admin/moderator */}
                 {(user.role === 'admin' || user.role === 'moderator') && (
                   <button
                     className="btn-primary"
@@ -101,11 +100,27 @@ const Dashboard = () => {
                 </div>
               </div>
 
-              <div className="stat-tile">
+              {/* Clickable My Videos card */}
+              <div
+                className="stat-tile"
+                onClick={() => navigate('/my-videos')}
+                style={{ cursor: 'pointer' }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = 'var(--accent-orange)';
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = 'var(--border)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
                 <div className="stat-tile-icon" style={{ background: 'rgba(255,107,53,0.15)', color: '#ff6b35' }}>🎬</div>
-                <div>
+                <div style={{ flex: 1 }}>
                   <div className="stat-tile-label">My Videos</div>
-                  <div className="stat-tile-value">{recentVideos.length}</div>
+                  <div className="stat-tile-value" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>{recentVideos.length}</span>
+                    <span style={{ fontSize: 13, color: 'var(--accent-blue)', fontWeight: 600 }}>View all →</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -158,7 +173,6 @@ const Dashboard = () => {
                     { icon: '⭐', label: 'Go Premium', desc: 'Unlock more features', path: '/premium' },
                     { icon: '🔗', label: 'API Docs', desc: 'Developer access', path: '/api-docs' },
                     { icon: '⚙️', label: 'Settings', desc: 'Profile & security', path: '/settings' },
-                    // 👇 Admin quick action — only for admin/moderator
                     ...(user.role === 'admin' || user.role === 'moderator'
                       ? [{ icon: '👑', label: 'Admin Panel', desc: 'Manage platform', path: '/admin' }]
                       : []

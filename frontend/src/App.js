@@ -14,6 +14,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Upload from './pages/Upload';
+import MyVideos from './pages/MyVideos';
 
 // Placeholder pages
 const Earn = () => (
@@ -285,8 +286,10 @@ function App() {
             <AdminRoute><AdminPanel /></AdminRoute>
           } />
 
-          {/* Redirects */}
-          <Route path="/my-videos" element={<Navigate to="/dashboard" />} />
+          {/* My Videos */}
+          <Route path="/my-videos" element={
+            <ProtectedRoute><MyVideos /></ProtectedRoute>
+          } />
           <Route path="/earnings" element={<Navigate to="/dashboard" />} />
 
           <Route path="*" element={<NotFound />} />
