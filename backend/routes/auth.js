@@ -6,14 +6,11 @@ const { body, validationResult } = require('express-validator');
 const pool = require('../config/db');
 const authMiddleware = require('../middleware/auth');
 
-// Generate JWT (includes role)
 const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' });
 };
 
 // @route   POST /api/auth/register
-// @desc    Register new user
-// @access  Public
 router.post(
   '/register',
   [
@@ -23,20 +20,16 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { username, email, password } = req.body;
-
     try {
       const existing = await pool.query(
         'SELECT id FROM users WHERE email = $1 OR username = $2',
         [email, username]
       );
-      if (existing.rows.length > 0) {
+      if (existing.rows.length > 0)
         return res.status(409).json({ message: 'Email or username already in use.' });
-      }
 
       const salt = await bcrypt.genSalt(10);
       const passwordHash = await bcrypt.hash(password, salt);
@@ -73,57 +66,6 @@ router.post(
 );
 
 // @route   POST /api/auth/login
-// @desc    Login user
-// @access  Public
-// @route   PUT /api/auth/change-password
-// @desc    Change password
-// @access  Private
-router.put('/change-password', authMiddleware, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    return res.status(400).json({ message: 'All fields are required.' });
-  }
-
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
-  }
-
-  try {
-    // Fetch fresh user with password hash
-    const result = await pool.query(
-      'SELECT * FROM users WHERE id = $1',
-      [req.user.id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found.' });
-    }
-
-    const user = result.rows[0];
-
-    // Verify current password
-    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Current password is incorrect.' });
-    }
-
-    // Hash new password
-    const salt = await bcrypt.genSalt(10);
-    const newHash = await bcrypt.hash(newPassword, salt);
-
-    // Update in DB
-    await pool.query(
-      'UPDATE users SET password_hash = $1 WHERE id = $2',
-      [newHash, req.user.id]
-    );
-
-    res.json({ message: 'Password changed successfully.' });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ message: 'Server error.' });
-  }
-});
 router.post(
   '/login',
   [
@@ -132,33 +74,23 @@ router.post(
   ],
   async (req, res) => {
     const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
+    if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
     const { email, password } = req.body;
-
     try {
-      const result = await pool.query(
-        'SELECT * FROM users WHERE email = $1',
-        [email]
-      );
+      const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
 
-      if (result.rows.length === 0) {
+      if (result.rows.length === 0)
         return res.status(401).json({ message: 'Invalid email or password.' });
-      }
 
       const user = result.rows[0];
 
-      // Check if banned
-      if (user.is_banned) {
+      if (user.is_banned)
         return res.status(403).json({ message: `Account banned: ${user.ban_reason || 'Contact support.'}` });
-      }
 
       const isMatch = await bcrypt.compare(password, user.password_hash);
-      if (!isMatch) {
+      if (!isMatch)
         return res.status(401).json({ message: 'Invalid email or password.' });
-      }
 
       const token = generateToken(user.id, user.role);
 
@@ -184,8 +116,6 @@ router.post(
 );
 
 // @route   GET /api/auth/me
-// @desc    Get current user
-// @access  Private
 router.get('/me', authMiddleware, async (req, res) => {
   res.json({
     user: {
@@ -202,11 +132,8 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 // @route   PUT /api/auth/profile
-// @desc    Update profile
-// @access  Private
 router.put('/profile', authMiddleware, async (req, res) => {
   const { username, bio, avatarUrl } = req.body;
-
   try {
     const result = await pool.query(
       `UPDATE users SET username = COALESCE($1, username), bio = COALESCE($2, bio), avatar_url = COALESCE($3, avatar_url)
@@ -214,7 +141,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
        RETURNING id, username, email, role, avatar_url, bio, is_premium, total_earnings, total_views`,
       [username, bio, avatarUrl, req.user.id]
     );
-
     res.json({ user: result.rows[0] });
   } catch (error) {
     console.error('Profile update error:', error);
@@ -223,42 +149,6 @@ router.put('/profile', authMiddleware, async (req, res) => {
 });
 
 // @route   PUT /api/auth/change-password
-// @desc    Change password
-// @access  Private
-router.put('/change-password', authMiddleware, async (req, res) => {
-  const { currentPassword, newPassword } = req.body;
-
-  if (!currentPassword || !newPassword) {
-    return res.status(400).json({ message: 'Both fields are required.' });
-  }
-  if (newPassword.length < 6) {
-    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
-  }
-
-  try {
-    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
-    const user = result.rows[0];
-
-    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Current password is incorrect.' });
-    }
-
-    const salt = await bcrypt.genSalt(10);
-    const newHash = await bcrypt.hash(newPassword, salt);
-
-    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
-
-    res.json({ message: 'Password changed successfully.' });
-  } catch (error) {
-    console.error('Change password error:', error);
-    res.status(500).json({ message: 'Server error.' });
-  }
-});
-const bcrypt = require('bcryptjs');
-// (already imported presumably)
-
-// PUT /api/auth/change-password
 router.put('/change-password', authMiddleware, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
@@ -269,19 +159,25 @@ router.put('/change-password', authMiddleware, async (req, res) => {
     return res.status(400).json({ message: 'New password must be at least 6 characters.' });
 
   try {
-    const result = await db.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+
+    if (result.rows.length === 0)
+      return res.status(404).json({ message: 'User not found.' });
+
     const user = result.rows[0];
 
     const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
     if (!isMatch)
-      return res.status(400).json({ message: 'Current password is incorrect.' });
+      return res.status(401).json({ message: 'Current password is incorrect.' });
 
-    const hashed = await bcrypt.hash(newPassword, 10);
-    await db.query('UPDATE users SET password_hash = $1 WHERE id = $2', [hashed, req.user.id]);
+    const salt = await bcrypt.genSalt(10);
+    const newHash = await bcrypt.hash(newPassword, salt);
 
-    res.json({ message: 'Password updated successfully.' });
-  } catch (err) {
-    console.error(err);
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+
+    res.json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Change password error:', error);
     res.status(500).json({ message: 'Server error.' });
   }
 });
