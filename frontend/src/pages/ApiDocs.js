@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './ApiDocs.css';
 
-const BASE_URL = 'https://your-api.com/api';
+const BASE_URL = 'https://lulu-stream-8fhq.vercel.app/api';
 
 const SECTIONS = [
   {
