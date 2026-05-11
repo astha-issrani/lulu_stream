@@ -8,6 +8,7 @@ import VideoPlayer from './pages/VideoPlayer';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminPanel from './pages/Adminpanel';
 import Earnings from './pages/Earnings';
+import ApiDocs from './pages/ApiDocs';
 
 // Pages
 import Home from './pages/Home';
@@ -137,7 +138,6 @@ const Premium = () => {
               e.currentTarget.style.boxShadow = 'none';
             }}
           >
-            {/* Popular badge */}
             {plan.popular && (
               <div style={{
                 position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)',
@@ -149,7 +149,6 @@ const Premium = () => {
               </div>
             )}
 
-            {/* Plan header */}
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontSize: 32, marginBottom: 10 }}>{plan.icon}</div>
               <div style={{ fontSize: 18, fontWeight: 800, color: plan.color, marginBottom: 6 }}>{plan.name}</div>
@@ -159,7 +158,6 @@ const Premium = () => {
               </div>
             </div>
 
-            {/* Features */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 28 }}>
               {plan.features.map((f, i) => (
                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: 'var(--text-secondary)' }}>
@@ -169,7 +167,6 @@ const Premium = () => {
               ))}
             </div>
 
-            {/* CTA button */}
             <button
               disabled={plan.disabled}
               style={{
@@ -196,43 +193,12 @@ const Premium = () => {
         ))}
       </div>
 
-      {/* Bottom note */}
       <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: 13, marginTop: 40 }}>
         All plans include a 7-day free trial. Cancel anytime. No hidden fees.
       </p>
     </div>
   );
 };
-
-const ApiDocs = () => (
-  <div className="page-wrapper" style={{ paddingTop: 120, textAlign: 'center' }}>
-    <h1 style={{ fontSize: 36, fontWeight: 800, marginBottom: 16 }}>
-      <span className="gradient-text">API</span> Documentation
-    </h1>
-    <p style={{ color: 'var(--text-secondary)', maxWidth: 500, margin: '0 auto 24px' }}>
-      Base URL: <code style={{ color: 'var(--accent-blue)', background: 'var(--bg-card)', padding: '2px 8px', borderRadius: 4 }}>
-        http://localhost:5000/api
-      </code>
-    </p>
-    <div style={{ maxWidth: 600, margin: '0 auto', textAlign: 'left', background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 16, padding: 28 }}>
-      {[
-        ['POST', '/auth/register', 'Create account'],
-        ['POST', '/auth/login', 'Login'],
-        ['GET', '/auth/me', 'Get current user (auth required)'],
-        ['GET', '/videos', 'List all videos'],
-        ['GET', '/videos/:id', 'Get single video'],
-        ['POST', '/videos', 'Upload video (auth required)'],
-        ['GET', '/earnings', 'Get earnings (auth required)'],
-      ].map(([method, path, desc], index) => (
-        <div key={`${method}-${index}`} style={{ display: 'flex', gap: 12, alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)', fontSize: 14 }}>
-          <span style={{ background: method === 'GET' ? 'rgba(0,229,160,0.15)' : 'rgba(79,142,247,0.15)', color: method === 'GET' ? 'var(--accent-green)' : 'var(--accent-blue)', padding: '2px 8px', borderRadius: 4, fontSize: 11, fontWeight: 700, width: 44, textAlign: 'center' }}>{method}</span>
-          <code style={{ color: 'var(--text-primary)', flex: 1 }}>{path}</code>
-          <span style={{ color: 'var(--text-muted)' }}>{desc}</span>
-        </div>
-      ))}
-    </div>
-  </div>
-);
 
 const NotFound = () => (
   <div className="page-wrapper" style={{ paddingTop: 120, textAlign: 'center' }}>
@@ -292,8 +258,8 @@ function App() {
             <ProtectedRoute><MyVideos /></ProtectedRoute>
           } />
           <Route path="/earnings" element={
-  <ProtectedRoute><Earnings /></ProtectedRoute>
-} />
+            <ProtectedRoute><Earnings /></ProtectedRoute>
+          } />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
