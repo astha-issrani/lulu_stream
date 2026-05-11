@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import axios from 'axios';
 import './Contact.css';
 
 const Contact = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' });
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Redirect admins/moderators away from the contact page
+  React.useEffect(() => {
+    if (user && ['admin', 'moderator'].includes(user.role)) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -154,7 +164,10 @@ const Contact = () => {
             <div className="footer-links">
               <Link to="#">Terms of service</Link>
               <Link to="/api-docs">API Documentation</Link>
-              <Link to="/contact">Contact Us</Link>
+              {/* Hide Contact Us link for admins/moderators */}
+              {(!user || !['admin', 'moderator'].includes(user.role)) && (
+                <Link to="/contact">Contact Us</Link>
+              )}
             </div>
 
             <div className="footer-links">
