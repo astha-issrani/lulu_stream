@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
 import './Settings.css';
@@ -12,14 +12,6 @@ const Settings = () => {
   const [avatarFile, setAvatarFile] = useState(null);
   const [saveError, setSaveError] = useState('');
   const fileInputRef = useRef(null);
-
-  // Theme & Language state — loaded from localStorage
-  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'Dark');
-
-  // Apply theme to body whenever it changes
-  useEffect(() => {
-    document.body.setAttribute('data-theme', theme.toLowerCase());
-  }, [theme]);
 
   const [profile, setProfile] = useState({
     username: user?.username || '',
@@ -50,10 +42,6 @@ const Settings = () => {
     confirmPassword: '',
   });
 
-  // ── NEW: password-specific error/success ──
-  const [passwordError, setPasswordError] = useState('');
-  const [passwordSaved, setPasswordSaved] = useState(false);
-
   const handleAvatarChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -70,6 +58,8 @@ const Settings = () => {
     try {
       let avatarUrl = user?.avatarUrl;
 
+      // If a new avatar was selected, convert to base64 and send as URL
+      // (for full file upload you'd use FormData + a separate upload endpoint)
       if (avatarFile) {
         const reader = new FileReader();
         avatarUrl = await new Promise((resolve) => {
@@ -112,43 +102,6 @@ const Settings = () => {
       website: user?.website || '',
       location: user?.location || '',
     });
-  };
-
-  // ── NEW: actual password change API call ──
-  const handlePasswordSave = async () => {
-    setPasswordError('');
-    setPasswordSaved(false);
-
-    const { currentPassword, newPassword, confirmPassword } = security;
-
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      setPasswordError('Please fill in all password fields.');
-      return;
-    }
-    if (newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match.');
-      return;
-    }
-
-    try {
-      await axios.put('/api/auth/change-password', { currentPassword, newPassword });
-      setPasswordSaved(true);
-      setSecurity({ currentPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => setPasswordSaved(false), 3000);
-    } catch (err) {
-      setPasswordError(err.response?.data?.message || 'Failed to change password.');
-    }
-  };
-
-  const handleAppearanceSave = () => {
-    localStorage.setItem('theme', theme);
-    document.body.setAttribute('data-theme', theme.toLowerCase());
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
   };
 
   const currentAvatar = avatarPreview || user?.avatarUrl;
@@ -236,6 +189,7 @@ const Settings = () => {
                   {editMode ? 'Edit your public profile details below' : 'View your public profile details'}
                 </p>
 
+                {/* Avatar */}
                 <div className="avatar-upload-row">
                   <div className="big-avatar" style={{ overflow: 'hidden', position: 'relative' }}>
                     {currentAvatar
@@ -345,7 +299,7 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Notification Preferences</h2>
                 <p className="section-desc">Choose what updates you want to receive</p>
-                <div className="toggle-group-list">
+                <div className="toggle-group">
                   <p className="toggle-category">Email Notifications</p>
                   {[
                     { key: 'emailViews', label: 'Video view milestones', desc: 'When your video hits 100, 1K, 10K views' },
@@ -390,7 +344,7 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Privacy & Visibility</h2>
                 <p className="section-desc">Control who can see your content and activity</p>
-                <div className="toggle-group-list">
+                <div className="toggle-group">
                   {[
                     { key: 'profilePublic', label: 'Public profile', desc: 'Anyone can view your profile and videos' },
                     { key: 'showEarnings', label: 'Show earnings', desc: 'Display your earnings badge on your profile' },
@@ -418,7 +372,6 @@ const Settings = () => {
               <div className="settings-section">
                 <h2>Security</h2>
                 <p className="section-desc">Keep your account safe</p>
-
                 <div className="form-grid">
                   <div className="form-group full-width">
                     <label>Current Password</label>
@@ -439,55 +392,14 @@ const Settings = () => {
                       onChange={e => setSecurity({ ...security, confirmPassword: e.target.value })} />
                   </div>
                 </div>
-
-                {/* ── Password feedback ── */}
-                {passwordError && (
-                  <div style={{
-                    background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)',
-                    color: '#ff7070', padding: '11px 16px', borderRadius: 8,
-                    fontSize: 14, marginBottom: 16
-                  }}>
-                    ❌ {passwordError}
-                  </div>
-                )}
-                {passwordSaved && (
-                  <div style={{
-                    background: 'rgba(0,229,160,0.1)', border: '1px solid rgba(0,229,160,0.3)',
-                    color: '#00e5a0', padding: '11px 16px', borderRadius: 8,
-                    fontSize: 14, marginBottom: 16
-                  }}>
-                    ✅ Password changed successfully!
-                  </div>
-                )}
-
-                {/* ── Change password button ── */}
-                <button
-                  className="btn-primary"
-                  style={{ marginBottom: 28 }}
-                  onClick={handlePasswordSave}
-                >
-                  🔐 Change Password
-                </button>
-
                 <div className="security-info-block">
-                  {/* ── FIX: check user?.is_email_verified instead of hardcoding ✅ ── */}
                   <div className="security-info-item">
-                    <span className="si-icon">
-                      {user?.is_email_verified ? '✅' : '⚠️'}
-                    </span>
+                    <span className="si-icon">✅</span>
                     <div>
-                      <strong>
-                        {user?.is_email_verified ? 'Email verified' : 'Email not verified'}
-                      </strong>
-                      <span>
-                        {user?.is_email_verified
-                          ? user?.email
-                          : 'Please check your inbox for a verification link.'
-                        }
-                      </span>
+                      <strong>Email verified</strong>
+                      <span>{user?.email}</span>
                     </div>
                   </div>
-
                   <div className="security-info-item">
                     <span className="si-icon">📱</span>
                     <div>
@@ -565,23 +477,20 @@ const Settings = () => {
                   <label className="appear-label">Theme</label>
                   <div className="theme-options">
                     {['Dark', 'Light', 'System'].map(t => (
-                      <button
-                        key={t}
-                        className={`theme-btn ${t === theme ? 'active' : ''}`}
-                        onClick={() => setTheme(t)}
-                      >
+                      <button key={t} className={`theme-btn ${t === 'Dark' ? 'active' : ''}`}>
                         <span>{t === 'Dark' ? '🌙' : t === 'Light' ? '☀️' : '💻'}</span>
                         {t}
                       </button>
                     ))}
                   </div>
-
-                  <p className="theme-preview-hint">
-                    {theme === 'Dark' && '🌙 Dark mode active — easy on the eyes'}
-                    {theme === 'Light' && '☀️ Light mode active — bright and clean'}
-                    {theme === 'System' && '💻 Follows your OS preference'}
-                  </p>
-
+                  <label className="appear-label" style={{ marginTop: 28 }}>Language</label>
+                  <select className="input-field" style={{ maxWidth: 280 }}>
+                    <option>English</option>
+                    <option>Hindi</option>
+                    <option>Spanish</option>
+                    <option>French</option>
+                    <option>German</option>
+                  </select>
                   <label className="appear-label" style={{ marginTop: 28 }}>Video Quality (default)</label>
                   <select className="input-field" style={{ maxWidth: 280 }}>
                     <option>Auto</option>
@@ -594,16 +503,10 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Save button for non-profile, non-security tabs */}
-            {activeTab !== 'profile' && activeTab !== 'security' && (
+            {/* Save button for non-profile tabs */}
+            {activeTab !== 'profile' && (
               <div className="settings-footer">
-                <button
-                  className={`btn-primary save-btn ${saved ? 'saved' : ''}`}
-                  onClick={activeTab === 'appearance' ? handleAppearanceSave : () => {
-                    setSaved(true);
-                    setTimeout(() => setSaved(false), 2500);
-                  }}
-                >
+                <button className={`btn-primary save-btn ${saved ? 'saved' : ''}`} onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 2500); }}>
                   {saved ? '✓ Saved!' : 'Save Changes'}
                 </button>
               </div>
