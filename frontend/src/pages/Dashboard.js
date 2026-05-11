@@ -155,7 +155,6 @@ const Dashboard = () => {
                 ) : (
                   <div className="panel-empty">
                     <p>No videos yet.</p>
-                    <button className="btn-primary" onClick={() => navigate('/upload')}>Upload Now</button>
                   </div>
                 )}
               </div>
