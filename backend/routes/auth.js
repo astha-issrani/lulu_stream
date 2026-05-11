@@ -222,4 +222,38 @@ router.put('/profile', authMiddleware, async (req, res) => {
   }
 });
 
+// @route   PUT /api/auth/change-password
+// @desc    Change password
+// @access  Private
+router.put('/change-password', authMiddleware, async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: 'Both fields are required.' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'New password must be at least 6 characters.' });
+  }
+
+  try {
+    const result = await pool.query('SELECT * FROM users WHERE id = $1', [req.user.id]);
+    const user = result.rows[0];
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Current password is incorrect.' });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const newHash = await bcrypt.hash(newPassword, salt);
+
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, req.user.id]);
+
+    res.json({ message: 'Password changed successfully.' });
+  } catch (error) {
+    console.error('Change password error:', error);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 module.exports = router;
