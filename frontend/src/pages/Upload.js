@@ -5,6 +5,7 @@ import './Upload.css';
 
 const CLOUD_NAME = 'dnpy4ko1u';
 const UPLOAD_PRESET = 'videostream_upload';
+const CHUNK_SIZE = 20 * 1024 * 1024; // 20MB chunks
 
 const Upload = () => {
   const navigate = useNavigate();
@@ -27,6 +28,7 @@ const Upload = () => {
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [videoUploaded, setVideoUploaded] = useState(false);
   const [thumbUploaded, setThumbUploaded] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -37,8 +39,8 @@ const Upload = () => {
     setForm({ ...form, [name]: type === 'checkbox' ? checked : value });
   };
 
-  // Upload a file to Cloudinary with progress tracking
-  const uploadToCloudinary = (file, resourceType, onProgress) => {
+  // ── Standard upload for small files (<100MB) ──
+  const uploadStandard = (file, resourceType, onProgress) => {
     return new Promise((resolve, reject) => {
       const formData = new FormData();
       formData.append('file', file);
@@ -50,32 +52,79 @@ const Upload = () => {
 
       xhr.upload.onprogress = (e) => {
         if (e.lengthComputable) {
-          const pct = Math.round((e.loaded / e.total) * 100);
-          onProgress(pct);
+          onProgress(Math.round((e.loaded / e.total) * 100));
         }
       };
 
       xhr.onload = () => {
         if (xhr.status === 200) {
-          const data = JSON.parse(xhr.responseText);
-          resolve(data.secure_url);
+          resolve(JSON.parse(xhr.responseText).secure_url);
         } else {
-          reject(new Error('Cloudinary upload failed'));
+          reject(new Error(`Upload failed: ${xhr.status}`));
         }
       };
-
-      xhr.onerror = () => reject(new Error('Network error during upload'));
+      xhr.onerror = () => reject(new Error('Network error'));
       xhr.send(formData);
     });
+  };
+
+  // ── Chunked upload for large files (>=100MB) ──
+  const uploadChunked = async (file, onProgress) => {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const uniqueUploadId = `upload_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+    let secureUrl = '';
+
+    for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+      const start = chunkIndex * CHUNK_SIZE;
+      const end = Math.min(start + CHUNK_SIZE, file.size);
+      const chunk = file.slice(start, end);
+
+      const formData = new FormData();
+      formData.append('file', chunk);
+      formData.append('upload_preset', UPLOAD_PRESET);
+      formData.append('resource_type', 'video');
+
+      const contentRange = `bytes ${start}-${end - 1}/${file.size}`;
+
+      setUploadStatus(`Uploading chunk ${chunkIndex + 1} of ${totalChunks}...`);
+
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/video/upload`,
+        {
+          method: 'POST',
+          headers: {
+            'X-Unique-Upload-Id': uniqueUploadId,
+            'Content-Range': contentRange,
+          },
+          body: formData,
+        }
+      );
+
+      if (!response.ok && response.status !== 206) {
+        const errText = await response.text();
+        throw new Error(`Chunk ${chunkIndex + 1} failed: ${response.status} — ${errText}`);
+      }
+
+      const pct = Math.round(((chunkIndex + 1) / totalChunks) * 100);
+      onProgress(pct);
+
+      // Last chunk returns the final response with secure_url
+      if (chunkIndex === totalChunks - 1) {
+        const data = await response.json();
+        secureUrl = data.secure_url;
+      }
+    }
+
+    return secureUrl;
   };
 
   const handleVideoFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const maxSize = 500 * 1024 * 1024; // 500MB
+    const maxSize = 2 * 1024 * 1024 * 1024; // 2GB hard cap
     if (file.size > maxSize) {
-      setError('Video file must be under 500MB.');
+      setError('Video file must be under 2GB.');
       return;
     }
 
@@ -84,14 +133,27 @@ const Upload = () => {
     setVideoUploaded(false);
     setVideoProgress(0);
     setUploadingVideo(true);
+    setUploadStatus('');
 
     try {
-      const url = await uploadToCloudinary(file, 'video', setVideoProgress);
+      let url;
+      if (file.size >= 100 * 1024 * 1024) {
+        // Large file — use chunked upload
+        setUploadStatus('Large file detected — using chunked upload...');
+        url = await uploadChunked(file, setVideoProgress);
+      } else {
+        // Small file — use standard upload
+        setUploadStatus('Uploading...');
+        url = await uploadStandard(file, 'video', setVideoProgress);
+      }
       setForm(prev => ({ ...prev, videoUrl: url }));
       setVideoUploaded(true);
+      setUploadStatus('');
     } catch (err) {
-      setError('Video upload failed. Please try again.');
+      console.error('Video upload error:', err);
+      setError(`Video upload failed: ${err.message}`);
       setVideoFile(null);
+      setUploadStatus('');
     } finally {
       setUploadingVideo(false);
     }
@@ -101,8 +163,7 @@ const Upload = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
+    if (file.size > 5 * 1024 * 1024) {
       setError('Thumbnail must be under 5MB.');
       return;
     }
@@ -114,7 +175,7 @@ const Upload = () => {
     setUploadingThumb(true);
 
     try {
-      const url = await uploadToCloudinary(file, 'image', setThumbProgress);
+      const url = await uploadStandard(file, 'image', setThumbProgress);
       setForm(prev => ({ ...prev, thumbnailUrl: url }));
       setThumbUploaded(true);
     } catch (err) {
@@ -156,7 +217,8 @@ const Upload = () => {
 
   const formatFileSize = (bytes) => {
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
   };
 
   return (
@@ -196,7 +258,7 @@ const Upload = () => {
                   <>
                     <div className="drop-icon">🎬</div>
                     <p className="drop-text">Click to select your video file</p>
-                    <p className="drop-hint">MP4, WebM, MOV — Max 500MB</p>
+                    <p className="drop-hint">MP4, WebM, MOV — Up to 2GB (chunked upload)</p>
                   </>
                 ) : (
                   <div className="file-info">
@@ -207,12 +269,19 @@ const Upload = () => {
                     </div>
 
                     {uploadingVideo && (
-                      <div className="progress-wrap">
-                        <div className="progress-bar">
-                          <div className="progress-fill" style={{ width: `${videoProgress}%` }} />
+                      <>
+                        {uploadStatus && (
+                          <div style={{ fontSize: 12, color: 'var(--accent-blue)', marginTop: 8, marginBottom: 4 }}>
+                            {uploadStatus}
+                          </div>
+                        )}
+                        <div className="progress-wrap">
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${videoProgress}%` }} />
+                          </div>
+                          <span className="progress-pct">{videoProgress}%</span>
                         </div>
-                        <span className="progress-pct">{videoProgress}%</span>
-                      </div>
+                      </>
                     )}
 
                     {videoUploaded && (
@@ -232,7 +301,7 @@ const Upload = () => {
               />
               {!videoFile && (
                 <small className="field-hint">
-                  Or paste a direct URL below instead
+                  Files under 100MB upload instantly. Larger files are split into chunks automatically.
                 </small>
               )}
             </div>
