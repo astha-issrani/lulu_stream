@@ -124,7 +124,7 @@ const Upload = () => {
 
     const maxSize = 2 * 1024 * 1024 * 1024; // 2GB hard cap
     if (file.size > maxSize) {
-      setError('Video file must be under 2GB.');
+      setError('Video file must be under 100MB.');
       return;
     }
 
