@@ -258,7 +258,7 @@ const Upload = () => {
                   <>
                     <div className="drop-icon">🎬</div>
                     <p className="drop-text">Click to select your video file</p>
-                    <p className="drop-hint">MP4, WebM, MOV — Up to 2GB (chunked upload)</p>
+                    <p className="drop-hint">MP4, WebM, MOV — Up to 100MB (chunked upload if greater than 100MB)</p>
                   </>
                 ) : (
                   <div className="file-info">
