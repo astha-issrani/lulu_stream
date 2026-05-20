@@ -141,3 +141,20 @@
 .auth-link:hover {
   text-decoration: underline;
 }
+/* ── Light Input Text ── */
+.auth-form .input-field {
+  background: #ffffff;
+  color: #4a5568;
+  border-color: #e2e8f0;
+}
+
+.auth-form .input-field::placeholder {
+  color: #b0bcc9;
+}
+
+.auth-form .input-field:focus {
+  background: #ffffff;
+  color: #4a5568;
+  border-color: #3b7ef5;
+  box-shadow: 0 0 0 3px rgba(59, 126, 245, 0.08);
+}
