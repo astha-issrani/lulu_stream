@@ -258,3 +258,36 @@ select.input-field option {
   .footer-inner { gap: 28px; }
   .footer-logo-right { display: none; }
 }
+/* ── Light Input Text ── */
+.contact-form .input-field,
+.contact-form .textarea,
+.contact-form select.input-field {
+  background: #ffffff;
+  color: #4a5568;
+  border-color: #e2e8f0;
+}
+
+.contact-form .input-field::placeholder,
+.contact-form .textarea::placeholder {
+  color: #b0bcc9;
+}
+
+.contact-form .input-field:focus,
+.contact-form .textarea:focus,
+.contact-form select.input-field:focus {
+  background: #ffffff;
+  color: #4a5568;
+  border-color: #3b7ef5;
+  box-shadow: 0 0 0 3px rgba(59, 126, 245, 0.08);
+}
+
+/* Select dropdown options */
+.contact-form select.input-field option {
+  background: #ffffff;
+  color: #4a5568;
+}
+
+/* Form labels */
+.contact-form .form-group label {
+  color: #64748b;
+}
