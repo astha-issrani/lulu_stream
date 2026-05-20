@@ -16,7 +16,13 @@ html, body {
   flex-direction: column;
 }
 
-/* ── Global input/textarea reset — honour theme variables everywhere ── */
+/* ── Force light theme globally ── */
+body {
+  background-color: #f0f2f8 !important;
+  color: #111122 !important;
+}
+
+/* ── Global input/textarea — light theme ── */
 input,
 input[type="text"],
 input[type="email"],
@@ -26,35 +32,169 @@ input[type="number"],
 input[type="url"],
 textarea,
 select {
-  background: var(--input-bg, #f4f6fc) !important;
-  color: var(--text-primary, #111122) !important;
-  border-color: var(--border, rgba(0,0,0,0.1)) !important;
+  background: #f4f6fc !important;
+  color: #111122 !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
   transition: background 0.3s, color 0.3s, border-color 0.2s;
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: var(--text-muted, #555570) !important;
-  opacity: 0.75;
+  color: #777790 !important;
+  opacity: 1;
 }
 
 input:focus,
 textarea:focus,
 select:focus {
-  border-color: var(--accent-blue, #2f6fdd) !important;
+  border-color: #2f6fdd !important;
   outline: none;
+  background: #ffffff !important;
 }
 
-/* Dark theme overrides */
-body[data-theme='dark'] input,
-body[data-theme='dark'] textarea,
-body[data-theme='dark'] select {
-  background: var(--input-bg, #1e1e34) !important;
-  color: var(--text-primary, #ffffff) !important;
-  border-color: var(--border, rgba(255,255,255,0.08)) !important;
+select option {
+  background: #ffffff;
+  color: #111122;
 }
 
-body[data-theme='dark'] input::placeholder,
-body[data-theme='dark'] textarea::placeholder {
-  color: var(--text-muted, #8888aa) !important;
+/* ════════════════════════════════
+   GLOBAL BUTTON SYSTEM
+   All buttons visible on light bg
+   ════════════════════════════════ */
+
+/* ── Base reset for all buttons ── */
+button,
+a[class*="btn"],
+[class*="btn-"] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 10px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
 }
+
+/* ── Primary — blue, white text ── */
+.btn-primary,
+button.btn-primary,
+a.btn-primary {
+  background: #2f6fdd !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 2px 10px rgba(47, 111, 221, 0.25);
+}
+
+.btn-primary:hover {
+  background: #1a5acc !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(47, 111, 221, 0.35);
+}
+
+/* ── Secondary — dark navy, white text ── */
+.btn-secondary,
+button.btn-secondary,
+a.btn-secondary {
+  background: #1a1d2e !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.btn-secondary:hover {
+  background: #2d3250 !important;
+  transform: translateY(-1px);
+}
+
+/* ── Outline — transparent with dark border ── */
+.btn-outline,
+button.btn-outline,
+a.btn-outline {
+  background: transparent !important;
+  color: #1a1d2e !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn-outline:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: #2f6fdd !important;
+  color: #2f6fdd !important;
+}
+
+/* ── Ghost — subtle, light border ── */
+.btn-ghost,
+button.btn-ghost,
+a.btn-ghost {
+  background: transparent !important;
+  color: #4a5568 !important;
+  border: 1.5px solid rgba(0, 0, 0, 0.15) !important;
+}
+
+.btn-ghost:hover {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: #2f6fdd !important;
+  color: #2f6fdd !important;
+}
+
+/* ── Danger — red ── */
+.btn-danger,
+button.btn-danger,
+a.btn-danger {
+  background: rgba(220, 53, 69, 0.1) !important;
+  color: #dc3545 !important;
+  border: 1.5px solid rgba(220, 53, 69, 0.3) !important;
+}
+
+.btn-danger:hover {
+  background: rgba(220, 53, 69, 0.18) !important;
+}
+
+/* ── Success / green ── */
+.btn-success,
+button.btn-success,
+a.btn-success {
+  background: #00a870 !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+.btn-success:hover {
+  background: #008f5e !important;
+  transform: translateY(-1px);
+}
+
+/* ── Disabled state for all ── */
+button:disabled,
+[class*="btn-"]:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Nav sign-in / login buttons ── */
+.btn-signin,
+.btn-login,
+[class*="sign-in"],
+[class*="signin"] {
+  background: #2f6fdd !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
+/* ── Page / card backgrounds ── */
+[class*="page"],
+[class*="-page"] {
+  background: #f0f2f8 !important;
+  color: #111122 !important;
+}
+
+/* ── Scrollbar (light) ── */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #e4e8f2; }
+::-webkit-scrollbar-thumb { background: #c0c8dc; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a0a8c0; }
