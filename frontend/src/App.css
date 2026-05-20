@@ -15,3 +15,46 @@ html, body {
   display: flex;
   flex-direction: column;
 }
+
+/* ── Global input/textarea reset — honour theme variables everywhere ── */
+input,
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="search"],
+input[type="number"],
+input[type="url"],
+textarea,
+select {
+  background: var(--input-bg, #f4f6fc) !important;
+  color: var(--text-primary, #111122) !important;
+  border-color: var(--border, rgba(0,0,0,0.1)) !important;
+  transition: background 0.3s, color 0.3s, border-color 0.2s;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-muted, #555570) !important;
+  opacity: 0.75;
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-blue, #2f6fdd) !important;
+  outline: none;
+}
+
+/* Dark theme overrides */
+body[data-theme='dark'] input,
+body[data-theme='dark'] textarea,
+body[data-theme='dark'] select {
+  background: var(--input-bg, #1e1e34) !important;
+  color: var(--text-primary, #ffffff) !important;
+  border-color: var(--border, rgba(255,255,255,0.08)) !important;
+}
+
+body[data-theme='dark'] input::placeholder,
+body[data-theme='dark'] textarea::placeholder {
+  color: var(--text-muted, #8888aa) !important;
+}
