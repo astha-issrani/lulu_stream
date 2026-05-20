@@ -446,8 +446,43 @@ input:checked + .toggle-slider:before {
   color: #00a878;
   border: 1px solid rgba(0, 196, 140, 0.2);
 }
-
 .premium-upgrade-card {
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: linear-gradient(135deg, rgba(255, 190, 50, 0.12), rgba(255, 140, 0, 0.07));
+  border: 1.5px solid rgba(255, 165, 0, 0.35);
+  border-radius: 12px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 12px rgba(255, 165, 0, 0.08);
+}
+
+.premium-upgrade-card > span {
+  font-size: 28px;
+  flex-shrink: 0;
+}
+
+.premium-upgrade-card strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1a1d2e;
+  margin-bottom: 4px;
+}
+
+.premium-upgrade-card p {
+  font-size: 13px;
+  color: #5a6478;
+  margin: 0;
+}
+
+.premium-upgrade-card .btn-primary {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* .premium-upgrade-card {
   margin-top: 24px;
   display: flex;
   align-items: center;
@@ -470,7 +505,7 @@ input:checked + .toggle-slider:before {
   color: #8896a8;
   margin: 0;
 }
-.premium-upgrade-card .btn-primary { margin-left: auto; flex-shrink: 0; }
+.premium-upgrade-card .btn-primary { margin-left: auto; flex-shrink: 0; } */
 
 /* ── APPEARANCE ── */
 .appearance-block { display: flex; flex-direction: column; }
