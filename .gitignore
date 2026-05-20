@@ -12,7 +12,7 @@
 .env.test.local
 .env.production
 .env.production.local
-.env.example.local
+
 
 # ── Node Modules ──
 node_modules/
