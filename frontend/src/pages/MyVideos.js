@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuth } from '../context/AuthContext';
+import './MyVideos.css';
 
 const MyVideos = () => {
   const { user } = useAuth();
@@ -52,120 +53,114 @@ const MyVideos = () => {
   const grouped = groupByDate(videos);
 
   return (
-    <div className="page-wrapper" style={{ paddingTop: 'calc(var(--nav-height) + 32px)', paddingBottom: 80 }}>
-      <div className="container">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+    <div className="my-videos-page">
+      <div className="my-videos-container">
+
+        {/* Header */}
+        <div className="my-videos-header">
           <div>
-            <h1 style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.5px' }}>
+            <h1 className="my-videos-title">
               🎬 My <span className="gradient-text">Videos</span>
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: 14, marginTop: 4 }}>
+            <p className="my-videos-subtitle">
               {videos.length} video{videos.length !== 1 ? 's' : ''} uploaded
             </p>
           </div>
-          <button className="btn-primary" onClick={() => navigate('/upload')}>
+          <button className="btn-upload" onClick={() => navigate('/upload')}>
             + Upload Video
           </button>
         </div>
 
+        {/* Error */}
         {error && (
-          <div style={{
-            background: 'rgba(255,80,80,0.1)', border: '1px solid rgba(255,80,80,0.3)',
-            color: '#ff7070', padding: '12px 16px', borderRadius: 8, marginBottom: 20, fontSize: 14
-          }}>
+          <div className="my-videos-error">
             ❌ {error}
           </div>
         )}
 
+        {/* Loading */}
         {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 80 }}>
-            <div className="spinner" />
+          <div className="my-videos-spinner-wrap">
+            <div className="my-videos-spinner" />
           </div>
+
+        /* Empty State */
         ) : videos.length === 0 ? (
-          <div style={{
-            textAlign: 'center', padding: '80px 20px',
-            background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 20
-          }}>
-            <div style={{ fontSize: 56, marginBottom: 16 }}>🎬</div>
-            <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>No videos yet</h3>
-            <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>Upload your first video and start earning!</p>
-            
+          <div className="my-videos-empty">
+            <div className="my-videos-empty-icon">🎬</div>
+            <h3>No videos yet</h3>
+            <p>Upload your first video and start earning!</p>
           </div>
+
+        /* Video Groups */
         ) : (
           Object.entries(grouped).map(([date, dayVideos]) => (
-            <div key={date} style={{ marginBottom: 40 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                  📅 {date}
-                </span>
-                <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
-                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+            <div key={date} className="mv-date-group">
+
+              {/* Date header */}
+              <div className="mv-date-header">
+                <span className="mv-date-label">📅 {date}</span>
+                <div className="mv-date-divider" />
+                <span className="mv-date-count">
                   {dayVideos.length} video{dayVideos.length !== 1 ? 's' : ''}
                 </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {/* Video list */}
+              <div className="mv-video-list">
                 {dayVideos.map(video => (
-                  <div key={video.id}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: 16,
-                      background: 'var(--bg-card)', border: '1px solid var(--border)',
-                      borderRadius: 14, padding: '14px 18px', transition: 'border-color 0.2s, transform 0.2s',
-                    }}
-                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.transform = 'translateY(-1px)'; }}
-                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'translateY(0)'; }}
-                  >
-                    <Link to={`/video/${video.id}`} style={{
-                      width: 120, height: 68, borderRadius: 8, overflow: 'hidden',
-                      background: 'var(--bg-secondary)', flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 24, color: 'var(--text-muted)', textDecoration: 'none'
-                    }}>
+                  <div key={video.id} className="mv-video-card">
+
+                    {/* Thumbnail */}
+                    <Link to={`/video/${video.id}`} className="mv-thumbnail-link">
                       {video.thumbnail_url
-                        ? <img src={video.thumbnail_url} alt={video.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ? <img src={video.thumbnail_url} alt={video.title} />
                         : '▶'}
                     </Link>
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <Link to={`/video/${video.id}`} style={{ textDecoration: 'none' }}>
-                        <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 6 }}>
-                          {video.title}
-                        </div>
+                    {/* Info */}
+                    <div className="mv-video-info">
+                      <Link to={`/video/${video.id}`} className="mv-video-title-link">
+                        <div className="mv-video-title">{video.title}</div>
                       </Link>
-                      <div style={{ display: 'flex', gap: 16, fontSize: 13, color: 'var(--text-muted)', flexWrap: 'wrap' }}>
+                      <div className="mv-video-meta">
                         <span>👁 {Number(video.views || 0).toLocaleString()} views</span>
-                        <span style={{ color: 'var(--accent-green)', fontWeight: 600 }}>💰 ${parseFloat(video.earnings || 0).toFixed(4)}</span>
-                        <span>🕐 {new Date(video.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="mv-meta-earnings">
+                          💰 ${parseFloat(video.earnings || 0).toFixed(4)}
+                        </span>
+                        <span>
+                          🕐 {new Date(video.created_at).toLocaleTimeString('en-US', {
+                            hour: '2-digit', minute: '2-digit'
+                          })}
+                        </span>
                         {video.is_premium && (
-                          <span style={{ background: 'rgba(79,142,247,0.15)', color: 'var(--accent-blue)', padding: '1px 8px', borderRadius: 50, fontSize: 11, fontWeight: 700 }}>⭐ PREMIUM</span>
+                          <span className="mv-badge-premium">⭐ PREMIUM</span>
                         )}
                       </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                      <Link to={`/video/${video.id}`} style={{
-                        background: 'rgba(79,142,247,0.1)', color: 'var(--accent-blue)',
-                        border: '1px solid rgba(79,142,247,0.2)', padding: '7px 14px',
-                        borderRadius: 8, fontSize: 13, fontWeight: 600, textDecoration: 'none',
-                        display: 'inline-flex', alignItems: 'center', gap: 5
-                      }}>▶ Play</Link>
+                    {/* Actions */}
+                    <div className="mv-video-actions">
+                      <Link to={`/video/${video.id}`} className="mv-btn-play">
+                        ▶ Play
+                      </Link>
                       <button
+                        className="mv-btn-delete"
                         onClick={() => handleDelete(video.id, video.title)}
                         disabled={deleting === video.id}
-                        style={{
-                          background: 'rgba(255,80,80,0.08)', color: '#ff7070',
-                          border: '1px solid rgba(255,80,80,0.2)', padding: '7px 14px',
-                          borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                          fontFamily: 'Outfit, sans-serif', display: 'inline-flex', alignItems: 'center', gap: 5
-                        }}
-                      >{deleting === video.id ? '...' : '🗑 Delete'}</button>
+                      >
+                        {deleting === video.id ? '...' : '🗑 Delete'}
+                      </button>
                     </div>
+
                   </div>
                 ))}
               </div>
+
             </div>
           ))
         )}
+
       </div>
     </div>
   );

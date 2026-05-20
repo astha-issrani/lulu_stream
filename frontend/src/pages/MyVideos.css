@@ -1,0 +1,343 @@
+/* =========================================
+   MyVideos.css — Light Mode
+   ========================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ── Page Wrapper ── */
+.my-videos-page {
+  min-height: 100vh;
+  background: #f7f9fc;
+  padding-top: calc(var(--nav-height, 70px) + 32px);
+  padding-bottom: 80px;
+  font-family: 'Outfit', sans-serif;
+}
+
+/* ── Container ── */
+.my-videos-container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Header Row ── */
+.my-videos-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 36px;
+}
+
+.my-videos-title {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  color: #1a1d2e;
+  line-height: 1.2;
+}
+
+.my-videos-title .gradient-text {
+  background: linear-gradient(135deg, #3b7ef5, #00b8d9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.my-videos-subtitle {
+  margin-top: 5px;
+  font-size: 14px;
+  color: #8896a8;
+  font-weight: 400;
+}
+
+/* ── Upload Button ── */
+.btn-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #3b7ef5 0%, #6c4fff 100%);
+  color: #ffffff;
+  border: none;
+  padding: 11px 26px;
+  border-radius: 50px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  white-space: nowrap;
+}
+.btn-upload:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(59, 126, 245, 0.32);
+}
+.btn-upload:active {
+  transform: translateY(0);
+}
+
+/* ── Error Banner ── */
+.my-videos-error {
+  background: #fff5f5;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px 16px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ── Spinner ── */
+.my-videos-spinner-wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 80px;
+}
+.my-videos-spinner {
+  width: 38px;
+  height: 38px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #3b7ef5;
+  border-radius: 50%;
+  animation: mv-spin 0.75s linear infinite;
+}
+@keyframes mv-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Empty State ── */
+.my-videos-empty {
+  text-align: center;
+  padding: 80px 24px;
+  background: #ffffff;
+  border: 1.5px dashed #d0d9e8;
+  border-radius: 20px;
+  animation: mv-fadeUp 0.5s ease both;
+}
+.my-videos-empty-icon {
+  font-size: 56px;
+  margin-bottom: 18px;
+  line-height: 1;
+}
+.my-videos-empty h3 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1d2e;
+  margin-bottom: 8px;
+}
+.my-videos-empty p {
+  font-size: 14px;
+  color: #8896a8;
+  margin-bottom: 24px;
+}
+
+/* ── Date Group ── */
+.mv-date-group {
+  margin-bottom: 40px;
+  animation: mv-fadeUp 0.5s ease both;
+}
+
+.mv-date-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.mv-date-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #8896a8;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+  white-space: nowrap;
+}
+.mv-date-divider {
+  flex: 1;
+  height: 1px;
+  background: #e8edf4;
+}
+.mv-date-count {
+  font-size: 12px;
+  color: #8896a8;
+  white-space: nowrap;
+}
+
+/* ── Video List ── */
+.mv-video-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* ── Video Row Card ── */
+.mv-video-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #ffffff;
+  border: 1.5px solid #eaeff6;
+  border-radius: 14px;
+  padding: 14px 18px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  animation: mv-fadeUp 0.4s ease both;
+}
+.mv-video-card:hover {
+  border-color: #c0d2f5;
+  box-shadow: 0 6px 20px rgba(59, 126, 245, 0.09);
+  transform: translateY(-2px);
+}
+
+/* ── Thumbnail ── */
+.mv-thumbnail-link {
+  width: 120px;
+  height: 68px;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #f0f4fb;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: #a0aec0;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.mv-thumbnail-link:hover {
+  opacity: 0.88;
+}
+.mv-thumbnail-link img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Video Info ── */
+.mv-video-info {
+  flex: 1;
+  min-width: 0;
+}
+.mv-video-title-link {
+  text-decoration: none;
+}
+.mv-video-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1d2e;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 7px;
+  transition: color 0.2s;
+}
+.mv-video-title-link:hover .mv-video-title {
+  color: #3b7ef5;
+}
+
+.mv-video-meta {
+  display: flex;
+  gap: 14px;
+  font-size: 13px;
+  color: #8896a8;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.mv-meta-earnings {
+  color: #00a87a;
+  font-weight: 700;
+}
+.mv-badge-premium {
+  background: rgba(59, 126, 245, 0.1);
+  color: #3b7ef5;
+  padding: 2px 9px;
+  border-radius: 50px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+/* ── Action Buttons ── */
+.mv-video-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.mv-btn-play {
+  background: #eef4ff;
+  color: #3b7ef5;
+  border: 1.5px solid #c7d9fc;
+  padding: 7px 15px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.mv-btn-play:hover {
+  background: #dbeaff;
+  border-color: #3b7ef5;
+  transform: translateY(-1px);
+}
+
+.mv-btn-delete {
+  background: #fff5f5;
+  color: #e53e3e;
+  border: 1.5px solid #fed7d7;
+  padding: 7px 15px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: 'Outfit', sans-serif;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s, border-color 0.2s, transform 0.15s;
+  white-space: nowrap;
+}
+.mv-btn-delete:hover:not(:disabled) {
+  background: #fed7d7;
+  border-color: #e53e3e;
+  transform: translateY(-1px);
+}
+.mv-btn-delete:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Animations ── */
+@keyframes mv-fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .my-videos-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .mv-video-card {
+    flex-wrap: wrap;
+  }
+  .mv-thumbnail-link {
+    width: 100%;
+    height: 160px;
+    border-radius: 10px;
+  }
+  .mv-video-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
