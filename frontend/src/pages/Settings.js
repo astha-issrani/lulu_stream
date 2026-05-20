@@ -148,7 +148,7 @@ const Settings = () => {
     { id: 'privacy', icon: '🔒', label: 'Privacy' },
     { id: 'security', icon: '🛡️', label: 'Security' },
     { id: 'monetization', icon: '💰', label: 'Monetization' },
-    { id: 'appearance', icon: '🎨', label: 'Appearance' },
+    
   ];
 
   return (
@@ -534,40 +534,8 @@ const Settings = () => {
               </div>
             )}
 
-            {/* ── APPEARANCE ── */}
-            {activeTab === 'appearance' && (
-              <div className="settings-section">
-                <h2>Appearance</h2>
-                <p className="section-desc">Customize your viewing experience</p>
-                <div className="appearance-block">
-                  <label className="appear-label">Theme</label>
-                  <div className="theme-options">
-                    {['Dark', 'Light', 'System'].map(t => (
-                      <button key={t} className={`theme-btn ${t === 'Dark' ? 'active' : ''}`}>
-                        <span>{t === 'Dark' ? '🌙' : t === 'Light' ? '☀️' : '💻'}</span>
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                  <label className="appear-label" style={{ marginTop: 28 }}>Language</label>
-                  <select className="input-field" style={{ maxWidth: 280 }}>
-                    <option>English</option>
-                    <option>Hindi</option>
-                    <option>Spanish</option>
-                    <option>French</option>
-                    <option>German</option>
-                  </select>
-                  <label className="appear-label" style={{ marginTop: 28 }}>Video Quality (default)</label>
-                  <select className="input-field" style={{ maxWidth: 280 }}>
-                    <option>Auto</option>
-                    <option>1080p</option>
-                    <option>720p</option>
-                    <option>480p</option>
-                    <option>360p</option>
-                  </select>
-                </div>
-              </div>
-            )}
+            
+                   
 
             {/* Save button for non-profile tabs */}
             {activeTab !== 'profile' && activeTab !== 'security' && (
